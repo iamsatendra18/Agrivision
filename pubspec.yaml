@@ -39,6 +39,12 @@ dependencies:
   cloud_firestore: ^5.6.5
   firebase_core: ^3.12.1
   shared_preferences: ^2.0.8
+  lucide_icons: ^0.257.0
+  intl: ^0.20.2
+  image_picker: ^1.0.4
+  permission_handler: ^11.0.1
+  url_launcher: ^6.3.1
+
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +77,7 @@ flutter:
     - assets/carrot.jpg
     - assets/potato.jpg
     - assets/tomato.jpg
+
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

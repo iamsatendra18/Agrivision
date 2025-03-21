@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:agrivision/utiles/routes/routes_name.dart';
 
-class UserProfileScreen extends StatefulWidget {
-  const UserProfileScreen({super.key});
+class TraderProfilePage extends StatefulWidget {
+  const TraderProfilePage({super.key});
 
   @override
-  _UserProfileScreenState createState() => _UserProfileScreenState();
+  _TraderProfilePageState createState() => _TraderProfilePageState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> {
+class _TraderProfilePageState extends State<TraderProfilePage> {
   bool isEditing = false;
   final TextEditingController nameController =
-  TextEditingController(text: 'Satendra Singh');
+  TextEditingController(text: 'Satendra Kushwaha');
   final TextEditingController addressController =
   TextEditingController(text: 'Baneshwor, Kathmandu');
   final TextEditingController phoneController =
@@ -23,11 +23,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     setState(() {
       isEditing = !isEditing;
     });
-  }
-
-  void logout(BuildContext context) {
-    Navigator.pushNamedAndRemoveUntil(
-        context, RoutesName.loginScreen, (route) => false);
   }
 
   Widget buildTextField(String label, TextEditingController controller) {
@@ -77,7 +72,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'Satendra Kushwaha',
+                      'Satendra Singh',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
                     ),
                     Text(
@@ -122,25 +117,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               SizedBox(height: 16),
 
               // Logout Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => logout(context),
-                  icon: Icon(Icons.logout, color: Colors.white),
-                  label: Text(
-                    'Logout',
-                    style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    backgroundColor: Color(0xFFD32F2F), // Red for Logout Button
-                    elevation: 5,
-                  ),
-                ),
-              ),
             ],
           ),
         ),

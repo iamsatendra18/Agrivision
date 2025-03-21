@@ -27,13 +27,13 @@ class MyApp extends StatelessWidget {
           create: (context) => NavigationProvider(),
         ),
       ],
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'AgriVision',
-          theme: ThemeData(primarySwatch: Colors.blue),
-          initialRoute: RoutesName.navigationMenu,
-          onGenerateRoute: Routes.generateRoute,
-        ),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'AgriVision',
+        theme: ThemeData(primarySwatch: Colors.blue),
+        initialRoute: RoutesName.navigationMenu,
+        onGenerateRoute: Routes.generateRoute,
+      ),
 
     );
   }

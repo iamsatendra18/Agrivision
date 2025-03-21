@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
-import 'signup_screen.dart';
-import '../user/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -14,8 +12,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  bool rememberMe = false;
   String selectedRole = 'User'; // Default role
+  bool rememberMe = false;
 
   @override
   void initState() {
@@ -30,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (rememberMe) {
         emailController.text = prefs.getString('email') ?? '';
         passwordController.text = prefs.getString('password') ?? '';
+        selectedRole = prefs.getString('role') ?? 'User';
       }
     });
   }
@@ -41,11 +40,30 @@ class _LoginScreenState extends State<LoginScreen> {
       if (rememberMe) {
         prefs.setString('email', emailController.text);
         prefs.setString('password', passwordController.text);
+        prefs.setString('role', selectedRole);
       } else {
         prefs.remove('email');
         prefs.remove('password');
+        prefs.remove('role');
       }
     });
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool obscureText = false, IconData? icon}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: icon != null ? Icon(icon, color: Color(0xFF2E7D32)) : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: Color(0xFFE8F5E9), // Light green background
+      ),
+    );
   }
 
   @override
@@ -53,38 +71,47 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
+      backgroundColor: Color(0xFFF1F8E9), // Light earthy background
       body: SingleChildScrollView(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(0, 40, 0, 0),
-                  child: Text(
-                    'Login',
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.blue,
-                    ),
+                Text(
+                  'Welcome Back!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E7D32), // Deep Green
                   ),
                 ),
+                SizedBox(height: 10),
+                Text(
+                  'Login to continue',
+                  style: TextStyle(fontSize: 16, color: Colors.green[700]),
+                ),
+                SizedBox(height: 30),
                 Image.asset(
                   'assets/agrivision_logo.png',
-                  width: 200,
-                  height: 200,
+                  width: 150,
+                  height: 150,
                 ),
-                TextField(
-                  controller: emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
+                SizedBox(height: 30),
+                _buildTextField(
+                  'Email',
+                  emailController,
+                  icon: Icons.email,
                 ),
-                TextField(
-                  controller: passwordController,
+                SizedBox(height: 16),
+                _buildTextField(
+                  'Password',
+                  passwordController,
                   obscureText: true,
-                  decoration: InputDecoration(labelText: 'Password'),
+                  icon: Icons.lock,
                 ),
-
+                SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: selectedRole,
                   items: ['User', 'Trader'].map((role) {
@@ -98,12 +125,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       selectedRole = value!;
                     });
                   },
-                  decoration: InputDecoration(labelText: "Select Role"),
+                  decoration: InputDecoration(
+                    labelText: "Select Role",
+                    prefixIcon: Icon(Icons.work, color: Color(0xFF2E7D32)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Color(0xFFE8F5E9),
+                  ),
                 ),
+                SizedBox(height: 10),
                 Row(
                   children: [
                     Checkbox(
                       value: rememberMe,
+                      activeColor: Color(0xFF2E7D32),
                       onChanged: (value) {
                         setState(() {
                           _handleRememberMe(value!);
@@ -111,38 +148,54 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     Text('Remember Me'),
+                    Spacer(),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(
+                          context, RoutesName.forgotPasswordScreen),
+                      child: Text("Forgot Password?",
+                          style: TextStyle(color: Color(0xFF2E7D32))),
+                    ),
                   ],
                 ),
                 SizedBox(height: 20),
                 authProvider.isLoading
                     ? CircularProgressIndicator()
-                    : ElevatedButton(
-                  onPressed: () async {
-                    await authProvider.login(
-                      emailController.text,
-                      passwordController.text,
-                      selectedRole, // Passing role
-                      context,
-                    );
-                  },
-                  child: Text('Login'),
+                    : SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await authProvider.login(
+                        emailController.text,
+                        passwordController.text,
+                        context,
+                      );
+                    },
+                    icon: Icon(Icons.login, color: Colors.white),
+                    label: Text(
+                      'Login',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: Color(0xFF2E7D32),
+                    ),
+                  ),
                 ),
-                SizedBox(height: 20,),
+                SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text("Don't have an account?"),
                     TextButton(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, RoutesName.signupScreen),
-                      child: Text("Sign up"),
+                      onPressed: () => Navigator.pushNamed(
+                          context, RoutesName.signupScreen),
+                      child: Text("Sign up",
+                          style: TextStyle(color: Color(0xFF2E7D32))),
                     ),
                   ],
-                ),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, RoutesName.forgotPasswordScreen),
-                  child: Text("Forgot Password?"),
                 ),
               ],
             ),
