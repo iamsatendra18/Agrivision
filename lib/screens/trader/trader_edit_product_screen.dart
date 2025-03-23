@@ -1,183 +1,207 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TraderEditProductScreen extends StatefulWidget {
+  final String productId;
+  const TraderEditProductScreen({required this.productId});
+
   @override
   _TraderEditProductScreenState createState() => _TraderEditProductScreenState();
 }
 
 class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
-  File? _image;
+  final _formKey = GlobalKey<FormState>();
+
+  String _productName = '';
+  String _description = '';
+  String _selectedCategory = 'Vegetables';
+  double _price = 0;
+  double _quantity = 0;
+  String _imageUrl = '';
+  File? _newImageFile;
+  bool _isLoading = true;
+
   final picker = ImagePicker();
+  final List<String> _categories = [
+    'Vegetables', 'Fruits', 'Dairy Products', 'crops', 'Herbs', 'Grains','Spinach','Others'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProductData();
+  }
+
+  Future<void> _loadProductData() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('products')
+          .doc(widget.productId)
+          .get();
+
+      final data = doc.data() as Map<String, dynamic>;
+      setState(() {
+        _productName = data['name'] ?? '';
+        _description = data['description'] ?? '';
+        _selectedCategory = data['category'] ?? 'Vegetables';
+        _price = (data['price'] ?? 0).toDouble();
+        _quantity = (data['quantity'] ?? 0).toDouble();
+        _imageUrl = data['imageUrl'] ?? '';
+        _isLoading = false;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading product: $e')),
+      );
+    }
+  }
 
   Future<void> _pickImage() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
       setState(() {
-        _image = File(pickedFile.path);
+        _newImageFile = File(picked.path);
       });
     }
   }
 
-  final _formKey = GlobalKey<FormState>();
-  String _productName = '';
-  String _price = '';
-  String _quantity = '';
-  String _description = '';
-  String _selectedCategory = 'Vegetables';
+  Future<String> _uploadImage(File image) async {
+    final fileName = 'product_images/${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref = FirebaseStorage.instance.ref().child(fileName);
+    await ref.putFile(image);
+    return await ref.getDownloadURL();
+  }
 
-  final List<String> _categories = [
-    'Vegetables',
-    'Fruits',
-    'Dairy',
-    'Grains',
-    'Herbs',
-    'Others'
-  ];
+  Future<void> _saveChanges() async {
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+    setState(() => _isLoading = true);
+
+    try {
+      String imageUrlToUpdate = _imageUrl;
+
+      if (_newImageFile != null) {
+        imageUrlToUpdate = await _uploadImage(_newImageFile!);
+      }
+
+      await FirebaseFirestore.instance
+          .collection('products')
+          .doc(widget.productId)
+          .update({
+        'name': _productName,
+        'description': _description,
+        'price': _price,
+        'quantity': _quantity,
+        'category': _selectedCategory,
+        'imageUrl': imageUrlToUpdate,
+        'updatedAt': Timestamp.now(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("✅ Product updated successfully!")),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Error: $e")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) return Scaffold(body: Center(child: CircularProgressIndicator()));
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Product'),
+        title: Text("Edit Product"),
         backgroundColor: Colors.green[700],
-        centerTitle: true,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product Name
-                Text('Product Name', style: TextStyle(fontWeight: FontWeight.bold)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    hintText: 'Enter product name',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => value!.isEmpty ? 'Please enter product name' : null,
-                  onSaved: (value) => _productName = value!,
-                ),
-                SizedBox(height: 15),
-
-                // Price
-                Text('Price (in ₹)', style: TextStyle(fontWeight: FontWeight.bold)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    hintText: 'Enter price',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty ? 'Please enter price' : null,
-                  onSaved: (value) => _price = value!,
-                ),
-                SizedBox(height: 15),
-
-                // Quantity
-                Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    hintText: 'Enter quantity (e.g., 10 kg, 5 pieces)',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => value!.isEmpty ? 'Please enter quantity' : null,
-                  onSaved: (value) => _quantity = value!,
-                ),
-                SizedBox(height: 15),
-
-                // Category Selection
-                Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
+                _buildTextField("Product Name", _productName, (val) => _productName = val!),
+                _buildTextField("Price (₹)", _price.toString(), (val) => _price = double.parse(val!), keyboardType: TextInputType.number),
+                _buildTextField("Quantity", _quantity.toString(), (val) => _quantity = double.parse(val!), keyboardType: TextInputType.number),
                 DropdownButtonFormField<String>(
                   value: _selectedCategory,
-                  items: _categories.map((category) {
-                    return DropdownMenuItem(value: category, child: Text(category));
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value!;
-                    });
-                  },
-                  decoration: InputDecoration(border: OutlineInputBorder()),
+                  items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                  onChanged: (val) => setState(() => _selectedCategory = val!),
+                  decoration: InputDecoration(labelText: "Category", border: OutlineInputBorder()),
                 ),
-                SizedBox(height: 15),
-
-                // Description
-                Text('Description', style: TextStyle(fontWeight: FontWeight.bold)),
-                TextFormField(
-                  decoration: InputDecoration(
-                    hintText: 'Enter product description',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                  validator: (value) => value!.isEmpty ? 'Please enter a description' : null,
-                  onSaved: (value) => _description = value!,
-                ),
+                SizedBox(height: 12),
+                _buildTextField("Description", _description, (val) => _description = val!, maxLines: 3),
                 SizedBox(height: 20),
 
-                // Image Upload Box - Moved Below Description
-                Text('Upload Product Image', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text("Product Image", style: TextStyle(fontWeight: FontWeight.bold)),
                 GestureDetector(
                   onTap: _pickImage,
                   child: Container(
-                    width: double.infinity,
+                    margin: EdgeInsets.symmetric(vertical: 10),
                     height: 150,
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.green, width: 2),
+                      border: Border.all(color: Colors.green),
                       borderRadius: BorderRadius.circular(10),
                       color: Colors.green[50],
                     ),
-                    child: _image == null
-                        ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.camera_alt, size: 40, color: Colors.green),
-                          SizedBox(height: 5),
-                          Text('Tap to upload image', style: TextStyle(color: Colors.green)),
-                        ],
-                      ),
-                    )
-                        : ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        _image!,
-                        width: double.infinity,
-                        height: 150,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    child: _newImageFile != null
+                        ? Image.file(_newImageFile!, fit: BoxFit.cover)
+                        : (_imageUrl.isNotEmpty
+                        ? Image.network(_imageUrl, fit: BoxFit.cover)
+                        : Center(child: Icon(Icons.image, size: 40, color: Colors.green))),
                   ),
                 ),
-                SizedBox(height: 20),
 
-                // Save Button
-                Center(
+                SizedBox(
+                  width: double.infinity,
                   child: ElevatedButton.icon(
                     icon: Icon(Icons.save),
-                    label: Text('Save Changes'),
+                    label: Text("Save Changes"),
+                    onPressed: _saveChanges,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green[700],
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 14),
                     ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Product updated successfully!')),
-                        );
-                      }
-                    },
                   ),
-                ),
+                )
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      String label,
+      String initialValue,
+      FormFieldSetter<String> onSaved, {
+        TextInputType keyboardType = TextInputType.text,
+        int maxLines = 1,
+      }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        initialValue: initialValue,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
+        validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+        onSaved: onSaved,
       ),
     );
   }

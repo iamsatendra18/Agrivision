@@ -23,6 +23,9 @@ import '../../screens/trader/trader_payment_screen.dart';
 import '../../screens/trader/trader_profile_page.dart';
 import '../../screens/trader/trader_service_screen.dart';
 import '../../screens/user/user_notification_screen.dart';
+import '../../screens/trader/trader_product_list_screen.dart';
+import '../../screens/user/review_screen.dart';
+
 
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -41,6 +44,11 @@ class Routes {
         return MaterialPageRoute(builder: (_) => ForgotPasswordScreen());
       case RoutesName.navigationMenu:
         return MaterialPageRoute(builder: (_) => NavigationMenu());
+      case RoutesName.reviewScreen: // 👈 Add this in your switch-case
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => ReviewScreen(productId: args['productId']),
+        );
       case RoutesName.userProfileScreen:
         return MaterialPageRoute(builder: (_) => UserProfileScreen());
       case RoutesName.traderProfilePage:
@@ -58,13 +66,20 @@ class Routes {
       case RoutesName.traderAddProductScreen:
         return MaterialPageRoute(builder: (_) => TraderAddProductScreen());
       case RoutesName.traderEditProductScreen:
-        return MaterialPageRoute(builder: (_) => TraderEditProductScreen());
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => TraderEditProductScreen(productId: args['productId']),
+        );
+
       case RoutesName.traderContactUsScreen:
         return MaterialPageRoute(builder: (_) => TraderContactUsScreen());
       case RoutesName.traderNotificationScreen:
         return MaterialPageRoute(builder: (_) => TraderNotificationScreen());
       case RoutesName.userNotificationScreen:
         return MaterialPageRoute(builder: (_) => UserNotificationScreen());
+      case RoutesName.traderProductListScreen:
+        return MaterialPageRoute(builder: (_) => TraderProductListScreen());
+
       case RoutesName.homePage:
         return MaterialPageRoute(builder: (_) => HomePage());
       case RoutesName.productDetailScreen:

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -14,18 +16,19 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
   double? price, quantity;
   File? _image;
 
-  // List of predefined categories
   final List<String> _categories = [
     'Fruits',
     'Vegetables',
     'Crops',
     'Dairy Products',
     'Spinach'
+    'Grains',
+    'Herbs',
+    'Others',
   ];
 
   final ImagePicker _picker = ImagePicker();
 
-  // Function to pick an image
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
@@ -33,6 +36,43 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
       setState(() {
         _image = File(pickedFile.path);
       });
+    }
+  }
+
+  // 🔥 Function to save product to Firestore
+  Future<void> _submitProduct() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      try {
+        await FirebaseFirestore.instance.collection('products').add({
+          'name': productName,
+          'description': description,
+          'price': price,
+          'quantity': quantity,
+          'category': selectedCategory,
+          'imageUrl': '', // image upload will be handled later
+          'createdBy': currentUser?.uid ?? 'Unknown',
+          'createdAt': Timestamp.now(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Product added successfully!")),
+        );
+
+        _formKey.currentState!.reset();
+        setState(() {
+          _image = null;
+          selectedCategory = null;
+        });
+
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to add product: $e")),
+        );
+      }
     }
   }
 
@@ -190,15 +230,7 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            _formKey.currentState!.save();
-            // Process the product data
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Product added successfully!")),
-            );
-          }
-        },
+        onPressed: _submitProduct,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green.shade700,
           shape: RoundedRectangleBorder(

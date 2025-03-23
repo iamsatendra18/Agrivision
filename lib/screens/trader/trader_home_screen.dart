@@ -5,6 +5,7 @@ import 'package:agrivision/screens/trader/trader_edit_product_screen.dart';
 import 'package:agrivision/screens/trader/trader_notification_screen.dart';
 import 'package:agrivision/screens/trader/trader_order_screen.dart';
 import 'package:agrivision/screens/trader/trader_payment_screen.dart';
+import 'package:agrivision/screens/trader/trader_product_list_screen.dart';
 import 'package:agrivision/screens/trader/trader_profile_page.dart';
 import 'package:agrivision/screens/trader/trader_service_screen.dart';
 import 'package:flutter/material.dart';
@@ -124,13 +125,14 @@ class TraderHomeScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.update),
-              title: Text('Edit Product'),
+              leading: Icon(Icons.edit),
+              title: Text('My Products'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => TraderEditProductScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => TraderProductListScreen()));
               },
             ),
+
             ListTile(
               leading: Icon(Icons.contact_mail),
               title: Text('Contact Us'),

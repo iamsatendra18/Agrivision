@@ -1,13 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:agrivision/utiles/routes/routes_name.dart';
 
-class HomeScreen extends StatelessWidget {
-  final List<Map<String, String>> items = [
-    {'name': 'Apple', 'image': 'assets/apple.jpg', 'price': '100', 'quantity': '10'},
-    {'name': 'Banana', 'image': 'assets/banana.jpg', 'price': '200', 'quantity': '20'},
-    {'name': 'Carrot', 'image': 'assets/carrot.jpg', 'price': '300', 'quantity': '30'},
-    {'name': 'Tomato', 'image': 'assets/tomato.jpg', 'price': '400', 'quantity': '40'},
-    {'name': 'Potato', 'image': 'assets/potato.jpg', 'price': '500', 'quantity': '50'},
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _searchText = '';
+  String _selectedCategory = 'All';
+
+  final List<String> _categories = [
+    'All', 'Vegetables', 'Fruits', 'Dairy Products','Crops','Spinach', 'Grains', 'Herbs', 'Others'
   ];
 
   @override
@@ -17,215 +22,199 @@ class HomeScreen extends StatelessWidget {
 
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Color(0xFFF1F8E9), // Light agriculture background
-        body: CustomScrollView(
-          slivers: [
-            // SliverAppBar with agriculture theme
-            SliverAppBar(
-              backgroundColor: Color(0xFF2E7D32), // Deep Green Theme
-              floating: true,
-              snap: true,
-              title: Row(
-                children: [
-                  Image.asset(
-                    'assets/agrivision_logo.png',
-                    height: screenHeight * 0.06, // Responsive logo size
-                  ),
-                  SizedBox(width: screenWidth * 0.03),
-                  Text(
-                    'Hi, User!',
-                    style: TextStyle(fontSize: screenWidth * 0.05, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  Spacer(),
-                  TextButton(
-                    onPressed: (){
-                      Navigator.pushNamed(context, RoutesName.userNotificationScreen);
-                    },
-                      child: Icon(Icons.notifications_outlined, color: Colors.white)),
-                  SizedBox(width: screenWidth * 0.05),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, RoutesName.cartBasketScreen);
-                    },
-                    icon: Icon(Icons.shopping_cart_outlined, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SearchFieldWidget(),
-              ),
-            ),
-            SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'Trending Products',
-                  style: TextStyle(fontSize: screenWidth * 0.06, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: items.map((item) {
-                    return Container(
-                      width: screenWidth * 0.45, // Adjust width
-                      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.02, vertical: screenHeight * 0.02),
-                      child: Card(
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(10),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                item['image']!,
-                                height: screenHeight * 0.12,
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                item['name']!,
-                                style: TextStyle(
-                                  fontSize: screenWidth * 0.05,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green[900],
-                                ),
-                              ),
-                              Text(
-                                'Rs. ${item['price']} / KG',
-                                style: TextStyle(
-                                  fontSize: screenWidth * 0.045,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.green[700],
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {},
-                                  child: Text("Buy Now"),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: EdgeInsets.symmetric(vertical: 10),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    backgroundColor: Color(0xFF2E7D32), // Deep Green
-                                    foregroundColor: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'Featured Products',
-                  style: TextStyle(fontSize: screenWidth * 0.06, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
-                ),
-              ),
-            ),
-            SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  return Card(
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            items[index]['image']!,
-                            height: screenHeight * 0.12,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            items[index]['name']!,
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.05,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green[900],
-                            ),
-                          ),
-                          Text(
-                            'Rs. ${items[index]['price']} / KG',
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.045,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.green[700],
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {},
-                              child: Text("Buy Now"),
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                backgroundColor: Color(0xFF2E7D32),
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                childCount: items.length,
-              ),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: screenWidth > 600 ? 3 : 2,
-                crossAxisSpacing: screenWidth * 0.03,
-                mainAxisSpacing: screenHeight * 0.02,
-                childAspectRatio: 3 / 4,
-              ),
-            ),
+        backgroundColor: Color(0xFFF1F8E9),
+        body: Column(
+          children: [
+            _buildAppBar(screenHeight, screenWidth),
+            _buildSearchField(),
+            _buildCategoryChips(),
+            Expanded(child: _buildProductGrid()),
           ],
         ),
       ),
     );
   }
-}
 
-// Improved Search Field Widget
-class SearchFieldWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: 'Search for products...',
-        prefixIcon: Icon(Icons.search, color: Color(0xFF2E7D32)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(40),
-          borderSide: BorderSide.none,
-        ),
-        filled: true,
-        fillColor: Colors.white,
+  Widget _buildAppBar(double screenHeight, double screenWidth) {
+    return Container(
+      color: Color(0xFF2E7D32),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Image.asset(
+            'assets/agrivision_logo.png',
+            height: screenHeight * 0.06,
+          ),
+          SizedBox(width: 10),
+          Text(
+            'Hi, User!',
+            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          Spacer(),
+          IconButton(
+            icon: Icon(Icons.notifications, color: Colors.white),
+            onPressed: () => Navigator.pushNamed(context, RoutesName.userNotificationScreen),
+          ),
+          IconButton(
+            icon: Icon(Icons.shopping_cart, color: Colors.white),
+            onPressed: () => Navigator.pushNamed(context, RoutesName.cartBasketScreen),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Padding(
+      padding: EdgeInsets.all(12),
+      child: TextField(
+        onChanged: (val) => setState(() => _searchText = val.toLowerCase()),
+        decoration: InputDecoration(
+          hintText: 'Search products...',
+          prefixIcon: Icon(Icons.search, color: Colors.green),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    return Container(
+      height: 40,
+      margin: EdgeInsets.symmetric(horizontal: 10),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _categories.length,
+        itemBuilder: (_, index) {
+          final category = _categories[index];
+          final isSelected = _selectedCategory == category;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: ChoiceChip(
+              label: Text(category),
+              selected: isSelected,
+              selectedColor: Colors.green[300],
+              onSelected: (_) => setState(() => _selectedCategory = category),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProductGrid() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('products').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return Center(child: Text("No products found."));
+
+        final products = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final name = data['name'].toString().toLowerCase();
+          final category = data['category'].toString();
+
+          final matchesSearch = _searchText.isEmpty || name.contains(_searchText);
+          final matchesCategory = _selectedCategory == 'All' || category == _selectedCategory;
+
+          return matchesSearch && matchesCategory;
+        }).toList();
+
+        return GridView.builder(
+          padding: EdgeInsets.all(12),
+          itemCount: products.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            childAspectRatio: 0.7,
+          ),
+          itemBuilder: (context, index) {
+            final doc = products[index];
+            final data = doc.data() as Map<String, dynamic>;
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  RoutesName.productDetailScreen,
+                  arguments: {
+                    'productId': doc.id,
+                    'productName': data['name'],
+                    'productImage': data['imageUrl'] ?? '',
+                    'productPrice': data['price'],
+                    'productQuantity': data['quantity'],
+                    'productDescription': data['description'],
+                  },
+                );
+              },
+              child: Card(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                      child: data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty
+                          ? Image.network(data['imageUrl'], height: 100, width: double.infinity, fit: BoxFit.cover)
+                          : Image.asset('assets/agrivision_logo.png', height: 100, width: double.infinity, fit: BoxFit.cover),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        children: [
+                          Text(
+                            data['name'],
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text('₹${data['price']} / ${data['quantity']}kg',
+                              style: TextStyle(color: Colors.green[700])),
+                          SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(5, (i) {
+                              return Icon(Icons.star, color: Colors.orange[400], size: 16);
+                            }),
+                          ),
+                          SizedBox(height: 6),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                RoutesName.productDetailScreen,
+                                arguments: {
+                                  'productId': doc.id,
+                                  'productName': data['name'],
+                                  'productImage': data['imageUrl'] ?? '',
+                                  'productPrice': data['price'],
+                                  'productQuantity': data['quantity'],
+                                  'productDescription': data['description'],
+                                },
+                              );
+                            },
+                            child: Text("Buy Now"),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: Size(double.infinity, 35),
+                              backgroundColor: Color(0xFF2E7D32),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

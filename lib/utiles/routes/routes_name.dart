@@ -19,6 +19,10 @@ class RoutesName {
   static const String traderContactUsScreen = 'trader_contact_us_screen';
   static const String traderNotificationScreen = 'trader_notification_screen';
   static const String userNotificationScreen = 'user_notification_screen';
+  static const String traderProductListScreen = 'trader_product_list_screen';
+  static const String reviewScreen = 'review_screen'; // 👈 Add this
+
+
 
 
 }

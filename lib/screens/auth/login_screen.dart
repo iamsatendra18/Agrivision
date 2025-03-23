@@ -12,7 +12,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  String selectedRole = 'User'; // Default role
   bool rememberMe = false;
 
   @override
@@ -28,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (rememberMe) {
         emailController.text = prefs.getString('email') ?? '';
         passwordController.text = prefs.getString('password') ?? '';
-        selectedRole = prefs.getString('role') ?? 'User';
       }
     });
   }
@@ -40,11 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (rememberMe) {
         prefs.setString('email', emailController.text);
         prefs.setString('password', passwordController.text);
-        prefs.setString('role', selectedRole);
       } else {
         prefs.remove('email');
         prefs.remove('password');
-        prefs.remove('role');
       }
     });
   }
@@ -57,11 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon != null ? Icon(icon, color: Color(0xFF2E7D32)) : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: Color(0xFFE8F5E9), // Light green background
+        fillColor: Color(0xFFE8F5E9),
       ),
     );
   }
@@ -71,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: Color(0xFFF1F8E9), // Light earthy background
+      backgroundColor: Color(0xFFF1F8E9),
       body: SingleChildScrollView(
         child: SafeArea(
           child: Padding(
@@ -84,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32), // Deep Green
+                    color: Color(0xFF2E7D32),
                   ),
                 ),
                 SizedBox(height: 10),
@@ -93,48 +87,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(fontSize: 16, color: Colors.green[700]),
                 ),
                 SizedBox(height: 30),
-                Image.asset(
-                  'assets/agrivision_logo.png',
-                  width: 150,
-                  height: 150,
-                ),
+                Image.asset('assets/agrivision_logo.png', width: 150, height: 150),
                 SizedBox(height: 30),
-                _buildTextField(
-                  'Email',
-                  emailController,
-                  icon: Icons.email,
-                ),
+                _buildTextField('Email', emailController, icon: Icons.email),
                 SizedBox(height: 16),
-                _buildTextField(
-                  'Password',
-                  passwordController,
-                  obscureText: true,
-                  icon: Icons.lock,
-                ),
-                SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: selectedRole,
-                  items: ['User', 'Trader'].map((role) {
-                    return DropdownMenuItem<String>(
-                      value: role,
-                      child: Text(role),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedRole = value!;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    labelText: "Select Role",
-                    prefixIcon: Icon(Icons.work, color: Color(0xFF2E7D32)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Color(0xFFE8F5E9),
-                  ),
-                ),
+                _buildTextField('Password', passwordController,
+                    obscureText: true, icon: Icons.lock),
                 SizedBox(height: 10),
                 Row(
                   children: [
@@ -165,8 +123,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       await authProvider.login(
-                        emailController.text,
-                        passwordController.text,
+                        emailController.text.trim(),
+                        passwordController.text.trim(),
                         context,
                       );
                     },
@@ -190,10 +148,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text("Don't have an account?"),
                     TextButton(
-                      onPressed: () => Navigator.pushNamed(
-                          context, RoutesName.signupScreen),
-                      child: Text("Sign up",
-                          style: TextStyle(color: Color(0xFF2E7D32))),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, RoutesName.signupScreen),
+                      child:
+                      Text("Sign up", style: TextStyle(color: Color(0xFF2E7D32))),
                     ),
                   ],
                 ),
