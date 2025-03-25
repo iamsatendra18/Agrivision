@@ -26,7 +26,7 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
 
   final picker = ImagePicker();
   final List<String> _categories = [
-    'Vegetables', 'Fruits', 'Dairy Products', 'crops', 'Herbs', 'Grains','Spinach','Others'
+    'Vegetables', 'Fruits', 'Dairy Products', 'Crops', 'Herbs', 'Grains','Spinach','Others'
   ];
 
   @override

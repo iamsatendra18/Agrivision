@@ -21,7 +21,7 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
     'Vegetables',
     'Crops',
     'Dairy Products',
-    'Spinach'
+    'Spinach',
     'Grains',
     'Herbs',
     'Others',

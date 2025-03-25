@@ -161,7 +161,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(height: 20),
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage('assets/agrivision_logo.png'),
+                  backgroundImage: AssetImage('assets/agricultures_logo.png'),
                   backgroundColor: Colors.white,
                 ),
                 const SizedBox(height: 20),

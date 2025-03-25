@@ -38,8 +38,31 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
     }
   }
 
-  void removeItem(DocumentSnapshot itemDoc) {
-    itemDoc.reference.delete();
+  void confirmDeleteItem(DocumentSnapshot itemDoc) {
+    final item = itemDoc.data() as Map<String, dynamic>;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("Delete ${item['name']}?"),
+        content: const Text("Are you sure you want to remove this item from cart?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await itemDoc.reference.delete();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("${item['name']} removed from cart")),
+              );
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   void saveCart() {
@@ -95,6 +118,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
+
                   Expanded(
                     child: ListView.builder(
                       itemCount: cartItems.length,
@@ -110,7 +134,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                             leading: CircleAvatar(
                               backgroundImage: item['imageUrl'] != ""
                                   ? NetworkImage(item['imageUrl'])
-                                  : AssetImage('assets/agrivision_logo.png') as ImageProvider,
+                                  : AssetImage('assets/agricultures_logo.png') as ImageProvider,
                               radius: 25,
                             ),
                             title: Text(item["name"],
@@ -134,7 +158,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => removeItem(doc),
+                                  onPressed: () => confirmDeleteItem(doc),
                                 ),
                               ],
                             ),
@@ -162,7 +186,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         ElevatedButton.icon(
                           onPressed: () {
-                            // Implement checkout logic
+                            // 👇 Add checkout navigation if needed
                           },
                           icon: const Icon(Icons.shopping_cart_checkout, color: Colors.white),
                           label: const Text('Proceed'),

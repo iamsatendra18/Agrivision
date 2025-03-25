@@ -21,6 +21,10 @@ class RoutesName {
   static const String userNotificationScreen = 'user_notification_screen';
   static const String traderProductListScreen = 'trader_product_list_screen';
   static const String reviewScreen = 'review_screen'; // 👈 Add this
+  static const String adminLoginScreen = 'admin_login_screen';
+  static const String adminDashboardScreen = 'admin_dashboard_screen';
+
+
 
 
 

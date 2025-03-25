@@ -1,6 +1,7 @@
+// navigation_menu.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/navigation_provider.dart';
 
 class NavigationMenu extends StatefulWidget {
@@ -18,12 +19,16 @@ class _NavigationMenuState extends State<NavigationMenu> {
     return Scaffold(
       bottomNavigationBar: NavigationBar(
         height: 75,
-        elevation: 10, // Adds slight elevation for a modern look
-        backgroundColor: Color(0xFFE8F5E9), // Light green background for soft theme
+        elevation: 10,
+        backgroundColor: Color(0xFFE8F5E9),
         selectedIndex: navProvider.selectedIndex,
-        indicatorColor: Color(0xFF1B5E20), // Dark green for selected tab highlight
+        indicatorColor: Color(0xFF1B5E20),
         onDestinationSelected: (int index) {
-          navProvider.onItemTapped(index);
+          if (FirebaseAuth.instance.currentUser == null && index != 0) {
+            Navigator.pushNamed(context, 'login_screen'); // use RoutesName.loginScreen if preferred
+          } else {
+            navProvider.onItemTapped(index);
+          }
         },
         destinations: [
           NavigationDestination(

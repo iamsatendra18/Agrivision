@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../utiles/routes/routes_name.dart';
 
 class SignupScreen extends StatefulWidget {
   @override
@@ -17,6 +18,10 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController confirmPasswordController = TextEditingController();
   String selectedRole = 'User';
   bool acceptTerms = false;
+
+  // 👁️ Visibility toggles
+  bool _showPassword = false;
+  bool _showConfirmPassword = false;
 
   final String passwordPattern = r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$';
   final String emailPattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
@@ -50,19 +55,33 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildTextField(String label, TextEditingController controller,
-      {bool obscureText = false, IconData? icon, String? Function(String?)? validator}) {
+      {bool obscureText = false,
+        IconData? icon,
+        String? Function(String?)? validator,
+        bool isPassword = false,
+        bool showPassword = false,
+        VoidCallback? togglePassword}) {
     return TextFormField(
       controller: controller,
-      obscureText: obscureText,
+      obscureText: isPassword ? !showPassword : obscureText,
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon != null ? Icon(icon, color: Color(0xFF2E7D32)) : null,
+        suffixIcon: isPassword
+            ? IconButton(
+          icon: Icon(
+            showPassword ? Icons.visibility_off : Icons.visibility,
+            color: Colors.grey,
+          ),
+          onPressed: togglePassword,
+        )
+            : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: Color(0xFFE8F5E9), // Light green background
+        fillColor: Color(0xFFE8F5E9),
       ),
     );
   }
@@ -72,11 +91,11 @@ class _SignupScreenState extends State<SignupScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: Color(0xFFF1F8E9), // Light earthy background
+      backgroundColor: Color(0xFFF1F8E9),
       appBar: AppBar(
         title: Text('Sign Up'),
         centerTitle: true,
-        backgroundColor: Color(0xFF2E7D32), // Dark Green Theme
+        backgroundColor: Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -104,14 +123,47 @@ class _SignupScreenState extends State<SignupScreen> {
                 SizedBox(height: 12),
                 _buildTextField('Email', emailController, icon: Icons.email, validator: validateEmail),
                 SizedBox(height: 12),
-                _buildTextField('Password', passwordController, obscureText: true, icon: Icons.lock, validator: validatePassword),
+
+                // ✅ Password with eye toggle
+                _buildTextField(
+                  'Password',
+                  passwordController,
+                  obscureText: true,
+                  icon: Icons.lock,
+                  validator: validatePassword,
+                  isPassword: true,
+                  showPassword: _showPassword,
+                  togglePassword: () {
+                    setState(() {
+                      _showPassword = !_showPassword;
+                    });
+                  },
+                ),
+
                 SizedBox(height: 12),
-                _buildTextField('Confirm Password', confirmPasswordController, obscureText: true, icon: Icons.lock, validator: (value) {
-                  if (value == null || value.isEmpty) return 'Confirm Password is required';
-                  if (value != passwordController.text) return 'Passwords do not match';
-                  return null;
-                }),
+
+                // ✅ Confirm Password with eye toggle
+                _buildTextField(
+                  'Confirm Password',
+                  confirmPasswordController,
+                  obscureText: true,
+                  icon: Icons.lock,
+                  isPassword: true,
+                  showPassword: _showConfirmPassword,
+                  togglePassword: () {
+                    setState(() {
+                      _showConfirmPassword = !_showConfirmPassword;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Confirm Password is required';
+                    if (value != passwordController.text) return 'Passwords do not match';
+                    return null;
+                  },
+                ),
+
                 SizedBox(height: 12),
+
                 DropdownButtonFormField<String>(
                   value: selectedRole,
                   items: ['User', 'Trader'].map((role) {
@@ -132,10 +184,12 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
-                    fillColor: Color(0xFFE8F5E9), // Light green background
+                    fillColor: Color(0xFFE8F5E9),
                   ),
                 ),
+
                 SizedBox(height: 12),
+
                 Row(
                   children: [
                     Checkbox(
@@ -155,7 +209,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ],
                 ),
+
                 SizedBox(height: 20),
+
                 authProvider.isLoading
                     ? CircularProgressIndicator()
                     : SizedBox(
@@ -170,16 +226,11 @@ class _SignupScreenState extends State<SignupScreen> {
                             phoneController.text.trim(),
                             emailController.text.trim(),
                             passwordController.text.trim(),
-                            selectedRole, // 'User' or 'Trader'
+                            selectedRole,
                             context,
                           );
 
-                          // Navigate based on role after signup
-                          if (selectedRole == 'Trader') {
-                            Navigator.pushReplacementNamed(context, '/login_screen');
-                          } else {
-                            Navigator.pushReplacementNamed(context, '/login_screen');
-                          }
+                          Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text("Signup failed: ${e.toString()}")),
@@ -187,7 +238,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         }
                       }
                     },
-                    icon: Icon(Icons.app_registration, color: Colors.white), // Signup Icon
+                    icon: Icon(Icons.app_registration, color: Colors.white),
                     label: Text(
                       'Sign Up',
                       style: TextStyle(fontSize: 18, color: Colors.white),
@@ -197,11 +248,13 @@ class _SignupScreenState extends State<SignupScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      backgroundColor: Color(0xFF2E7D32), // Dark Green
+                      backgroundColor: Color(0xFF2E7D32),
                     ),
                   ),
                 ),
+
                 SizedBox(height: 20),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

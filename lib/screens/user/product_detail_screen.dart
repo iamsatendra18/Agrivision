@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agrivision/utiles/routes/routes_name.dart'; // Make sure this is imported
 
 class ProductDetailScreen extends StatelessWidget {
-  // Function to add product to cart under `/cart/{userId}/items`
+  // Function to add product to cart under /cart/{userId}/items
   void _addToCart(BuildContext context, Map<String, dynamic> productData) async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -40,7 +40,19 @@ class ProductDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+
+    if (args == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Product Details'),
+          backgroundColor: Color(0xFF2E7D32),
+        ),
+        body: Center(
+          child: Text('No product details available.'),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(

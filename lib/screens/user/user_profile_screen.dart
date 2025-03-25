@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:agrivision/utiles/routes/routes_name.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -10,39 +12,79 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   bool isEditing = false;
-  final TextEditingController nameController =
-  TextEditingController(text: 'Satendra Singh');
-  final TextEditingController addressController =
-  TextEditingController(text: 'Baneshwor, Kathmandu');
-  final TextEditingController phoneController =
-  TextEditingController(text: '9817123456');
-  final TextEditingController emailController =
-  TextEditingController(text: 'satendrakushwaha2021@gmail.com');
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    if (uid != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
+      if (data != null) {
+        nameController.text = data['fullName'] ?? '';
+        addressController.text = data['address'] ?? '';
+        phoneController.text = data['phone'] ?? '';
+        emailController.text = data['email'] ?? '';
+        setState(() {}); // To rebuild with latest values
+      }
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (uid != null) {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'fullName': nameController.text.trim(),
+        'address': addressController.text.trim(),
+        'phone': phoneController.text.trim(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profile updated successfully!')),
+      );
+
+      setState(() {
+        isEditing = false;
+      });
+    }
+  }
 
   void toggleEdit() {
-    setState(() {
-      isEditing = !isEditing;
-    });
+    if (isEditing) {
+      _saveProfile();
+    } else {
+      setState(() {
+        isEditing = true;
+      });
+    }
   }
 
-  void logout(BuildContext context) {
-    Navigator.pushNamedAndRemoveUntil(
-        context, RoutesName.loginScreen, (route) => false);
+  void logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamedAndRemoveUntil(context, RoutesName.loginScreen, (route) => false);
   }
 
-  Widget buildTextField(String label, TextEditingController controller) {
+  Widget buildTextField(String label, TextEditingController controller, {bool readOnly = false}) {
     return TextField(
       controller: controller,
-      enabled: isEditing,
+      enabled: isEditing && !readOnly,
+      readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(Icons.edit, color: isEditing ? Color(0xFF2E7D32) : Colors.grey),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Color(0xFF2E7D32), width: 1.2),
         ),
         filled: true,
-        fillColor: Color(0xFFE8F5E9), // Soft green background
+        fillColor: Color(0xFFE8F5E9),
       ),
     );
   }
@@ -50,12 +92,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF1F8E9), // Light agriculture background
+      backgroundColor: Color(0xFFF1F8E9),
       appBar: AppBar(
         title: Text('User Profile'),
         centerTitle: true,
-        backgroundColor: Color(0xFF2E7D32), // Deep Green Agriculture Theme
-        foregroundColor: Colors.white, // White text for contrast
+        backgroundColor: Color(0xFF2E7D32),
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -69,7 +111,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: 55,
-                      backgroundColor: Color(0xFF2E7D32), // Green Border
+                      backgroundColor: Color(0xFF2E7D32),
                       child: CircleAvatar(
                         radius: 50,
                         backgroundImage: AssetImage('assets/agrivision_logo.png'),
@@ -77,11 +119,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'Satendra Kushwaha',
+                      nameController.text,
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
                     ),
                     Text(
-                      'Baneshwor, Kathmandu',
+                      addressController.text,
                       style: TextStyle(fontSize: 16, color: Colors.green[800]),
                     ),
                   ],
@@ -89,17 +131,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
               SizedBox(height: 20),
 
-              // Text Fields
+              // Editable Fields
               buildTextField('Full Name', nameController),
               SizedBox(height: 12),
               buildTextField('Address', addressController),
               SizedBox(height: 12),
               buildTextField('Phone Number', phoneController),
               SizedBox(height: 12),
-              buildTextField('Email', emailController),
+              buildTextField('Email', emailController, readOnly: true),
+
               SizedBox(height: 20),
 
-              // Edit Profile Button
+              // Edit / Save Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -114,11 +157,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    backgroundColor: Color(0xFF1B5E20), // Deep Green for CTA
-                    elevation: 5,
+                    backgroundColor: Color(0xFF1B5E20),
                   ),
                 ),
               ),
+
               SizedBox(height: 16),
 
               // Logout Button
@@ -136,8 +179,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    backgroundColor: Color(0xFFD32F2F), // Red for Logout Button
-                    elevation: 5,
+                    backgroundColor: Color(0xFFD32F2F),
                   ),
                 ),
               ),

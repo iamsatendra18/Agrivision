@@ -13,6 +13,7 @@ import 'package:agrivision/screens/user/user_profile_screen.dart';
 import 'package:agrivision/utiles/routes/routes_name.dart';
 import 'package:flutter/material.dart';
 
+import '../../screens/auth/admin_login_screen.dart';
 import '../../screens/trader/trader_add_product_screen.dart';
 import '../../screens/trader/trader_climate_guidencess_screen.dart';
 import '../../screens/trader/trader_contact_us_screen.dart';
@@ -25,7 +26,6 @@ import '../../screens/trader/trader_service_screen.dart';
 import '../../screens/user/user_notification_screen.dart';
 import '../../screens/trader/trader_product_list_screen.dart';
 import '../../screens/user/review_screen.dart';
-
 
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -58,7 +58,9 @@ class Routes {
       case RoutesName.traderServiceScreen:
         return MaterialPageRoute(builder: (_) => TraderServiceScreen());
       case RoutesName.traderClimateGuidenessScreen:
-        return MaterialPageRoute(builder: (_) => TraderClimateGuidencessScreen());
+        return MaterialPageRoute(
+          builder: (_) => TraderClimateGuidencessScreen(),
+        );
       case RoutesName.traderPaymentScreen:
         return MaterialPageRoute(builder: (_) => TraderPaymentScreen());
       case RoutesName.traderOrderScreen:
@@ -79,15 +81,19 @@ class Routes {
         return MaterialPageRoute(builder: (_) => UserNotificationScreen());
       case RoutesName.traderProductListScreen:
         return MaterialPageRoute(builder: (_) => TraderProductListScreen());
-
-      case RoutesName.homePage:
-        return MaterialPageRoute(builder: (_) => HomePage());
       case RoutesName.productDetailScreen:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           builder: (_) => ProductDetailScreen(),
           settings: RouteSettings(arguments: args),
         );
+
+      case RoutesName.homePage:
+        return MaterialPageRoute(builder: (_) => HomePage());
+      case RoutesName.adminLoginScreen:
+        return MaterialPageRoute(builder: (_) => AdminLoginScreen());
+      case RoutesName.adminDashboardScreen:
+        return MaterialPageRoute(builder: (_) => HomePage());
 
       default:
         return MaterialPageRoute(

@@ -13,11 +13,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool rememberMe = false;
+  bool _showPassword = false; // 👁️ For toggling password visibility
+
+  Map<String, dynamic>? redirectData;
 
   @override
   void initState() {
     super.initState();
     _loadUserEmailPassword();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args != null && args is Map<String, dynamic>) {
+      redirectData = args;
+
+      // Show snack message if redirected
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Please login to continue")),
+        );
+      });
+    }
   }
 
   void _loadUserEmailPassword() async {
@@ -47,12 +66,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildTextField(String label, TextEditingController controller,
       {bool obscureText = false, IconData? icon}) {
+    bool isPassword = label.toLowerCase().contains('password');
+
     return TextField(
       controller: controller,
-      obscureText: obscureText,
+      obscureText: isPassword ? !_showPassword : obscureText,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon != null ? Icon(icon, color: Color(0xFF2E7D32)) : null,
+        suffixIcon: isPassword
+            ? IconButton(
+          icon: Icon(
+            _showPassword ? Icons.visibility_off : Icons.visibility,
+            color: Colors.grey,
+          ),
+          onPressed: () {
+            setState(() {
+              _showPassword = !_showPassword;
+            });
+          },
+        )
+            : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Color(0xFFE8F5E9),
@@ -69,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SingleChildScrollView(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 25),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -81,14 +115,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Color(0xFF2E7D32),
                   ),
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 5),
                 Text(
                   'Login to continue',
                   style: TextStyle(fontSize: 16, color: Colors.green[700]),
                 ),
-                SizedBox(height: 30),
-                Image.asset('assets/agrivision_logo.png', width: 150, height: 150),
-                SizedBox(height: 30),
+                SizedBox(height: 10),
+                Image.asset('assets/agrivision_logo.png', width: 350, height: 250),
+                SizedBox(height: 10),
                 _buildTextField('Email', emailController, icon: Icons.email),
                 SizedBox(height: 16),
                 _buildTextField('Password', passwordController,
@@ -126,6 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         emailController.text.trim(),
                         passwordController.text.trim(),
                         context,
+                        redirectData: redirectData,
                       );
                     },
                     icon: Icon(Icons.login, color: Colors.white),
@@ -150,10 +185,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () =>
                           Navigator.pushNamed(context, RoutesName.signupScreen),
-                      child:
-                      Text("Sign up", style: TextStyle(color: Color(0xFF2E7D32))),
+                      child: Text("Sign up", style: TextStyle(color: Color(0xFF2E7D32))),
                     ),
                   ],
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, RoutesName.adminLoginScreen);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Color(0xFF2E7D32),
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text("Admin Login"),
                 ),
               ],
             ),
