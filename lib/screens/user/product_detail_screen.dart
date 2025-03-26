@@ -66,9 +66,15 @@ class ProductDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: args['productImage'] != null && args['productImage'] != ''
-                    ? Image.network(args['productImage'], height: 200)
-                    : Image.asset('assets/agrivision_logo.png', height: 200),
+                child: (args['productImage']?.toString().startsWith('assets/') ?? false)
+                    ? Image.asset(args['productImage'], height: 200)
+                    : Image.network(
+                  args['productImage'],
+                  height: 200,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset('assets/agrivision_logo.png', height: 200);
+                  },
+                ),
               ),
               SizedBox(height: 16.0),
               Text(
@@ -120,7 +126,7 @@ class ProductDetailScreen extends StatelessWidget {
                       context,
                       RoutesName.reviewScreen,
                       arguments: {
-                        'productId': args['productId'], // 👈 Make sure this is passed correctly
+                        'productId': args['productId'],
                       },
                     );
                   },

@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:agrivision/utiles/routes/routes_name.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
+  final User? user = FirebaseAuth.instance.currentUser;
+
+  void _signOut(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushReplacementNamed(context, RoutesName.adminLoginScreen);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -8,60 +17,86 @@ class AdminDashboardScreen extends StatelessWidget {
         title: Text('Admin Dashboard'),
         backgroundColor: Color(0xFF2E7D32),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      drawer: Drawer(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome, Admin!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to manage products screen
-              },
-              child: Text('Manage Products'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                backgroundColor: Color(0xFF2E7D32),
+            UserAccountsDrawerHeader(
+              accountName: Text(user?.displayName ?? 'Admin'),
+              accountEmail: Text(user?.email ?? ''),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, size: 40, color: Color(0xFF2E7D32)),
               ),
+              decoration: BoxDecoration(color: Color(0xFF2E7D32)),
             ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to view orders screen
-              },
-              child: Text('View Orders'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                backgroundColor: Color(0xFF2E7D32),
-              ),
+            _buildDrawerItem(
+              icon: Icons.dashboard,
+              label: 'Dashboard',
+              onTap: () => Navigator.pushReplacementNamed(context, RoutesName.adminDashboardScreen),
             ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to manage users screen
-              },
-              child: Text('Manage Users'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                backgroundColor: Color(0xFF2E7D32),
-              ),
+            _buildDrawerItem(
+              icon: Icons.receipt_long,
+              label: 'Order History',
+              onTap: () => Navigator.pushNamed(context, RoutesName.orderHistoryTab),
+            ),
+            _buildDrawerItem(
+              icon: Icons.payment,
+              label: 'Payment History',
+              onTap: () => Navigator.pushNamed(context, RoutesName.paymentsTab),
+            ),
+            _buildDrawerItem(
+              icon: Icons.people,
+              label: 'Users Management',
+              onTap: () => Navigator.pushNamed(context, RoutesName.usersManagementTab),
+            ),
+            _buildDrawerItem(
+              icon: Icons.check_circle,
+              label: 'Verified Products',
+              onTap: () => Navigator.pushNamed(context, RoutesName.verifiedProductsTab),
+            ),
+            _buildDrawerItem(
+              icon: Icons.verified_user,
+              label: 'Verified Traders',
+              onTap: () => Navigator.pushNamed(context, RoutesName.verifiedTradersTab),
+            ),
+            _buildDrawerItem(
+              icon: Icons.notifications,
+              label: 'Notifications',
+              onTap: () => Navigator.pushNamed(context, RoutesName.notificationsTab),
+            ),
+            _buildDrawerItem(
+              icon: Icons.analytics,
+              label: 'Analytics',
+              onTap: () => Navigator.pushNamed(context, RoutesName.analyticsTab),
+            ),
+            const Spacer(),
+            Divider(),
+            _buildDrawerItem(
+              icon: Icons.logout,
+              label: 'Logout',
+              onTap: () => _signOut(context),
             ),
           ],
         ),
       ),
+      body: Center(
+        child: Text(
+          'Welcome to Admin Dashboard!',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Color(0xFF2E7D32)),
+      title: Text(label, style: TextStyle(fontSize: 16)),
+      onTap: onTap,
     );
   }
 }

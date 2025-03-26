@@ -118,13 +118,22 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-
                   Expanded(
                     child: ListView.builder(
                       itemCount: cartItems.length,
                       itemBuilder: (context, index) {
                         final item = cartItems[index].data() as Map<String, dynamic>;
                         final doc = cartItems[index];
+                        final imageUrl = item['imageUrl']?.toString() ?? '';
+
+                        ImageProvider imageProvider;
+                        if (imageUrl.startsWith('assets/')) {
+                          imageProvider = AssetImage(imageUrl);
+                        } else if (imageUrl.isNotEmpty) {
+                          imageProvider = NetworkImage(imageUrl);
+                        } else {
+                          imageProvider = AssetImage('assets/agrivision_logo.png');
+                        }
 
                         return Card(
                           elevation: 4,
@@ -132,9 +141,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundImage: item['imageUrl'] != ""
-                                  ? NetworkImage(item['imageUrl'])
-                                  : AssetImage('assets/agricultures_logo.png') as ImageProvider,
+                              backgroundImage: imageProvider,
                               radius: 25,
                             ),
                             title: Text(item["name"],
@@ -168,7 +175,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                     ),
                   ),
 
-                  // TOTAL & BUTTONS
+                  // TOTAL & PROCEED BUTTON
                   const SizedBox(height: 10),
                   Text('💰 Total Amount',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.brown[700])),
@@ -186,7 +193,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         ElevatedButton.icon(
                           onPressed: () {
-                            // 👇 Add checkout navigation if needed
+                            // You can navigate to a Checkout Screen here
                           },
                           icon: const Icon(Icons.shopping_cart_checkout, color: Colors.white),
                           label: const Text('Proceed'),

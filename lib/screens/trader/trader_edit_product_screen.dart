@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:agrivision/utiles/routes/routes_name.dart';
 
 class TraderEditProductScreen extends StatefulWidget {
   final String productId;
@@ -26,7 +27,7 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
 
   final picker = ImagePicker();
   final List<String> _categories = [
-    'Vegetables', 'Fruits', 'Dairy Products', 'Crops', 'Herbs', 'Grains','Spinach','Others'
+    'Vegetables', 'Fruits', 'Dairy Products', 'Crops', 'Herbs', 'Grains', 'Spinach', 'Others'
   ];
 
   @override
@@ -37,11 +38,7 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
 
   Future<void> _loadProductData() async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('products')
-          .doc(widget.productId)
-          .get();
-
+      final doc = await FirebaseFirestore.instance.collection('products').doc(widget.productId).get();
       final data = doc.data() as Map<String, dynamic>;
       setState(() {
         _productName = data['name'] ?? '';
@@ -75,6 +72,12 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
     return await ref.getDownloadURL();
   }
 
+  bool _isValidImageUrl(String url) {
+    return (Uri.tryParse(url)?.hasAbsolutePath == true &&
+        (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.webp')))
+        || url.startsWith('assets/');
+  }
+
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
@@ -85,12 +88,15 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
 
       if (_newImageFile != null) {
         imageUrlToUpdate = await _uploadImage(_newImageFile!);
+      } else if (!_isValidImageUrl(_imageUrl)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ Invalid image URL or path.")),
+        );
+        setState(() => _isLoading = false);
+        return;
       }
 
-      await FirebaseFirestore.instance
-          .collection('products')
-          .doc(widget.productId)
-          .update({
+      await FirebaseFirestore.instance.collection('products').doc(widget.productId).update({
         'name': _productName,
         'description': _description,
         'price': _price,
@@ -98,12 +104,18 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
         'category': _selectedCategory,
         'imageUrl': imageUrlToUpdate,
         'updatedAt': Timestamp.now(),
+        'isVerified': false,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ Product updated successfully!")),
       );
-      Navigator.pop(context);
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        RoutesName.traderProductListScreen,
+            (route) => false,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("❌ Error: $e")),
@@ -140,28 +152,10 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
                 ),
                 SizedBox(height: 12),
                 _buildTextField("Description", _description, (val) => _description = val!, maxLines: 3),
-                SizedBox(height: 20),
-
-                Text("Product Image", style: TextStyle(fontWeight: FontWeight.bold)),
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(vertical: 10),
-                    height: 150,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.green),
-                      borderRadius: BorderRadius.circular(10),
-                      color: Colors.green[50],
-                    ),
-                    child: _newImageFile != null
-                        ? Image.file(_newImageFile!, fit: BoxFit.cover)
-                        : (_imageUrl.isNotEmpty
-                        ? Image.network(_imageUrl, fit: BoxFit.cover)
-                        : Center(child: Icon(Icons.image, size: 40, color: Colors.green))),
-                  ),
-                ),
-
+                _buildTextField("Image URL or Asset Path", _imageUrl, (val) => _imageUrl = val!),
+                SizedBox(height: 12),
+                _buildImagePreview(),
+                SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -172,6 +166,7 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
                       backgroundColor: Colors.green[700],
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 )
@@ -179,6 +174,28 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    if (_newImageFile != null) {
+      return Image.file(_newImageFile!, height: 150, fit: BoxFit.cover);
+    }
+
+    if (_imageUrl.isEmpty) {
+      return SizedBox.shrink();
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: _imageUrl.startsWith('assets/')
+          ? Image.asset(_imageUrl, height: 150, fit: BoxFit.cover)
+          : Image.network(
+        _imageUrl,
+        height: 150,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Image.asset('assets/agrivision_logo.png', height: 150, fit: BoxFit.cover),
       ),
     );
   }

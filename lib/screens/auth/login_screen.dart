@@ -13,8 +13,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool rememberMe = false;
-  bool _showPassword = false; // 👁️ For toggling password visibility
-
+  bool _showPassword = false;
   Map<String, dynamic>? redirectData;
 
   @override
@@ -30,7 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (args != null && args is Map<String, dynamic>) {
       redirectData = args;
 
-      // Show snack message if redirected
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Please login to continue")),
@@ -120,9 +118,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Login to continue',
                   style: TextStyle(fontSize: 16, color: Colors.green[700]),
                 ),
-                SizedBox(height: 10),
-                Image.asset('assets/agrivision_logo.png', width: 350, height: 250),
-                SizedBox(height: 10),
+                SizedBox(height: 16),
+                Image.asset('assets/agrivision_logo.png', width: 250, height: 200),
+                SizedBox(height: 16),
                 _buildTextField('Email', emailController, icon: Icons.email),
                 SizedBox(height: 16),
                 _buildTextField('Password', passwordController,
@@ -144,8 +142,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () => Navigator.pushNamed(
                           context, RoutesName.forgotPasswordScreen),
-                      child: Text("Forgot Password?",
-                          style: TextStyle(color: Color(0xFF2E7D32))),
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(color: Color(0xFF2E7D32)),
+                      ),
                     ),
                   ],
                 ),
@@ -183,26 +183,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text("Don't have an account?"),
                     TextButton(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, RoutesName.signupScreen),
-                      child: Text("Sign up", style: TextStyle(color: Color(0xFF2E7D32))),
+                      onPressed: () => Navigator.pushNamed(
+                          context, RoutesName.signupScreen),
+                      child: Text(
+                        "Sign up",
+                        style: TextStyle(color: Color(0xFF2E7D32)),
+                      ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
+                // ✅ Admin Login Styled as Link
+                TextButton(
                   onPressed: () {
                     Navigator.pushNamed(context, RoutesName.adminLoginScreen);
                   },
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Color(0xFF2E7D32),
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  child: Text(
+                    "Are you an admin? Login here",
+                    style: TextStyle(
+                      color: Color(0xFF2E7D32),
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
-                  child: Text("Admin Login"),
                 ),
               ],
             ),

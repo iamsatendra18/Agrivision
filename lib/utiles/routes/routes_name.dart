@@ -24,6 +24,14 @@ class RoutesName {
   static const String adminLoginScreen = 'admin_login_screen';
   static const String adminDashboardScreen = 'admin_dashboard_screen';
 
+  static const String verifiedTradersTab = 'verified_traders';
+  static const String verifiedProductsTab = 'verified_products';
+  static const String orderHistoryTab = 'order_history';
+  static const String notificationsTab = 'notifications';
+  static const String paymentsTab = 'payments';
+  static const String analyticsTab = 'analytics';
+  static const String usersManagementTab = 'users_management';
+
 
 
 

@@ -1,4 +1,3 @@
-// home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,7 +14,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _username = 'User';
 
   final List<String> _categories = [
-    'All', 'Vegetables', 'Fruits', 'Dairy Products', 'Crops', 'Spinach', 'Grains', 'Herbs', 'Others'
+    'All', 'Vegetables', 'Fruits', 'Dairy Products', 'Crops',
+    'Spinach', 'Grains', 'Herbs', 'Others'
   ];
 
   @override
@@ -66,10 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Image.asset(
-            'assets/agrivision_logo.png',
-            height: screenHeight * 0.06,
-          ),
+          Image.asset('assets/agrivision_logo.png', height: screenHeight * 0.06),
           SizedBox(width: 10),
           Text(
             'Hi, $_username!',
@@ -80,47 +77,41 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.notifications, color: Colors.white),
             onPressed: () => Navigator.pushNamed(context, RoutesName.userNotificationScreen),
           ),
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseAuth.instance.currentUser != null
-                ? FirebaseFirestore.instance
-                .collection('cart')
-                .doc(FirebaseAuth.instance.currentUser!.uid)
-                .collection('items')
-                .snapshots()
-                : null,
-            builder: (context, snapshot) {
-              int count = snapshot.data?.docs.length ?? 0;
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.shopping_cart, color: Colors.white),
-                    onPressed: () {
-                      if (FirebaseAuth.instance.currentUser == null) {
-                        Navigator.pushNamed(context, RoutesName.loginScreen);
-                      } else {
-                        Navigator.pushNamed(context, RoutesName.cartBasketScreen);
-                      }
-                    },
-                  ),
-                  if (count > 0)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '$count',
-                          style: TextStyle(fontSize: 12, color: Colors.white),
-                        ),
-                      ),
-                    )
-                ],
-              );
-            },
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.shopping_cart, color: Colors.white),
+                onPressed: () {
+                  if (FirebaseAuth.instance.currentUser == null) {
+                    Navigator.pushNamed(context, RoutesName.loginScreen);
+                  } else {
+                    Navigator.pushNamed(context, RoutesName.cartBasketScreen);
+                  }
+                },
+              ),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseAuth.instance.currentUser != null
+                    ? FirebaseFirestore.instance
+                    .collection('cart')
+                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                    .collection('items')
+                    .snapshots()
+                    : null,
+                builder: (context, snapshot) {
+                  int count = snapshot.data?.docs.length ?? 0;
+                  if (count == 0) return SizedBox();
+                  return Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      child: Text('$count', style: TextStyle(fontSize: 12, color: Colors.white)),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -204,6 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
           itemBuilder: (context, index) {
             final doc = products[index];
             final data = doc.data() as Map<String, dynamic>;
+            final imageUrl = data['imageUrl']?.toString() ?? '';
 
             return GestureDetector(
               onTap: () {
@@ -216,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     arguments: {
                       'productId': doc.id,
                       'productName': data['name'],
-                      'productImage': data['imageUrl'] ?? '',
+                      'productImage': imageUrl,
                       'productPrice': data['price'],
                       'productQuantity': data['quantity'],
                       'productDescription': data['description'],
@@ -232,48 +224,47 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                      child: data['imageUrl'] != null && data['imageUrl'].toString().isNotEmpty
-                          ? Image.network(data['imageUrl'], height: 100, width: double.infinity, fit: BoxFit.cover)
-                          : Image.asset('assets/agrivision_logo.png', height: 100, width: double.infinity, fit: BoxFit.cover),
+                      child: imageUrl.startsWith('assets/')
+                          ? Image.asset(imageUrl, height: 100, width: double.infinity, fit: BoxFit.cover)
+                          : Image.network(
+                        imageUrl,
+                        height: 100,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset('assets/agrivision_logo.png',
+                              height: 100, width: double.infinity, fit: BoxFit.cover);
+                        },
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8),
                       child: Column(
                         children: [
-                          Text(
-                            data['name'],
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          Text(data['name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           Text('₹${data['price']} / ${data['quantity']}kg',
                               style: TextStyle(color: Colors.green[700])),
                           SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(5, (i) {
-                              return Icon(Icons.star, color: Colors.orange[400], size: 16);
-                            }),
+                            children: List.generate(5, (i) =>
+                                Icon(Icons.star, size: 16, color: Colors.orange[400])),
                           ),
                           SizedBox(height: 6),
                           ElevatedButton(
                             onPressed: () {
-                              if (FirebaseAuth.instance.currentUser == null) {
-                                Navigator.pushNamed(context, RoutesName.loginScreen);
-                              } else {
-                                Navigator.pushNamed(
-                                  context,
-                                  RoutesName.productDetailScreen,
-                                  arguments: {
-                                    'productId': doc.id,
-                                    'productName': data['name'],
-                                    'productImage': data['imageUrl'] ?? '',
-                                    'productPrice': data['price'],
-                                    'productQuantity': data['quantity'],
-                                    'productDescription': data['description'],
-                                  },
-                                );
-                              }
+                              Navigator.pushNamed(
+                                context,
+                                RoutesName.productDetailScreen,
+                                arguments: {
+                                  'productId': doc.id,
+                                  'productName': data['name'],
+                                  'productImage': imageUrl,
+                                  'productPrice': data['price'],
+                                  'productQuantity': data['quantity'],
+                                  'productDescription': data['description'],
+                                },
+                              );
                             },
                             child: Text("Buy Now"),
                             style: ElevatedButton.styleFrom(

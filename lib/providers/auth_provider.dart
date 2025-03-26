@@ -11,6 +11,7 @@ class AuthProvider with ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
+  // ✅ SIGNUP
   Future<void> signup(
       String fullName,
       String address,
@@ -18,46 +19,63 @@ class AuthProvider with ChangeNotifier {
       String email,
       String password,
       String role,
-      BuildContext context) async {
+      BuildContext context,
+      ) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-          email: email, password: password);
+        email: email,
+        password: password,
+      );
 
       User? user = userCredential.user;
 
       if (user != null) {
-        await _firestore.collection('users').doc(user.uid).set({
+        final userData = {
           'fullName': fullName,
           'address': address,
           'phone': phone,
           'email': email,
           'role': role,
           'createdAt': FieldValue.serverTimestamp(),
-        });
+        };
+
+        if (role == 'Trader') {
+          userData['verified'] = false; // 👈 initially false
+        }
+
+        await _firestore.collection('users').doc(user.uid).set(userData);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Signup successful!")),
         );
 
+        // Navigate user based on role
         if (role == 'Trader') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => TraderHomeScreen()));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => TraderHomeScreen()),
+          );
         } else {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => NavigationMenu()));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => NavigationMenu()),
+          );
         }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Signup failed: ${e.toString()}")));
+        SnackBar(content: Text("Signup failed: ${e.toString()}")),
+      );
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  // ✅ Updated Login Function with Redirect
+  // ✅ LOGIN
   Future<void> login(
       String email,
       String password,
@@ -88,19 +106,41 @@ class AuthProvider with ChangeNotifier {
             );
           } else {
             if (role == 'Trader') {
-              Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => TraderHomeScreen()));
+              // ✅ Allow only if verified
+              final isVerified = userDoc.data().toString().contains('verified')
+                  ? userDoc['verified']
+                  : false;
+
+              if (isVerified) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => TraderHomeScreen()),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      "Your account is not verified yet. Please wait for admin approval.",
+                    ),
+                  ),
+                );
+                await _auth.signOut(); // ❌ Logout if not verified
+              }
             } else if (role == 'User') {
               Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => NavigationMenu()));
+                context,
+                MaterialPageRoute(builder: (_) => NavigationMenu()),
+              );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Invalid role assigned. Contact support.")));
+                SnackBar(content: Text("Invalid role assigned. Contact support.")),
+              );
             }
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("User data not found. Please try again.")));
+            SnackBar(content: Text("User data not found. Please try again.")),
+          );
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -112,11 +152,13 @@ class AuthProvider with ChangeNotifier {
       } else if (e.code == 'network-request-failed') {
         errorMessage = "Network error. Please check your internet connection.";
       }
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(errorMessage)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("An error occurred: ${e.toString()}")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("An error occurred: ${e.toString()}")),
+      );
     }
 
     _isLoading = false;

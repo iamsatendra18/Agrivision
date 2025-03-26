@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 class TraderAddProductScreen extends StatefulWidget {
   @override
@@ -12,67 +9,85 @@ class TraderAddProductScreen extends StatefulWidget {
 
 class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
   final _formKey = GlobalKey<FormState>();
-  String? productName, description, selectedCategory;
-  double? price, quantity;
-  File? _image;
+  String productName = '';
+  String description = '';
+  String? selectedCategory;
+  String imageUrl = '';
+  double price = 0;
+  double quantity = 0;
+  bool _isLoading = false;
 
   final List<String> _categories = [
-    'Fruits',
-    'Vegetables',
-    'Crops',
-    'Dairy Products',
-    'Spinach',
-    'Grains',
-    'Herbs',
-    'Others',
+    'Fruits', 'Vegetables', 'Crops', 'Dairy Products',
+    'Spinach', 'Grains', 'Herbs', 'Others',
   ];
 
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-    }
+  void _updateImagePreview(String url) {
+    setState(() {
+      imageUrl = url;
+    });
   }
 
-  // 🔥 Function to save product to Firestore
+  bool _isValidImageUrl(String url) {
+    return (Uri.tryParse(url)?.hasAbsolutePath == true &&
+        (url.endsWith('.jpg') ||
+            url.endsWith('.jpeg') ||
+            url.endsWith('.png') ||
+            url.endsWith('.webp'))) ||
+        url.startsWith('assets/');
+  }
+
   Future<void> _submitProduct() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
+    if (!_formKey.currentState!.validate()) return;
 
-      final currentUser = FirebaseAuth.instance.currentUser;
+    _formKey.currentState!.save();
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-      try {
-        await FirebaseFirestore.instance.collection('products').add({
-          'name': productName,
-          'description': description,
-          'price': price,
-          'quantity': quantity,
-          'category': selectedCategory,
-          'imageUrl': '', // image upload will be handled later
-          'createdBy': currentUser?.uid ?? 'Unknown',
-          'createdAt': Timestamp.now(),
-        });
+    // Check for critical nulls before proceeding
+    if (selectedCategory == null || imageUrl.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Please fill all required fields properly.")),
+      );
+      return;
+    }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Product added successfully!")),
-        );
+    if (!_isValidImageUrl(imageUrl)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Please enter a valid image URL or asset path.")),
+      );
+      return;
+    }
 
-        _formKey.currentState!.reset();
-        setState(() {
-          _image = null;
-          selectedCategory = null;
-        });
+    setState(() => _isLoading = true);
 
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to add product: $e")),
-        );
-      }
+    try {
+      await FirebaseFirestore.instance.collection('products').add({
+        'name': productName,
+        'description': description,
+        'price': price,
+        'quantity': quantity,
+        'category': selectedCategory,
+        'imageUrl': imageUrl,
+        'isVerified': false,
+        'createdBy': currentUser?.uid ?? 'Unknown',
+        'createdAt': Timestamp.now(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("✅ Product submitted for admin verification.")),
+      );
+
+      _formKey.currentState?.reset();
+      setState(() {
+        selectedCategory = null;
+        imageUrl = '';
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Failed to add product: ${e.toString()}")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -82,9 +97,10 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
       appBar: AppBar(
         title: Text('Add New Product'),
         backgroundColor: Colors.green.shade700,
-        elevation: 0,
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,21 +142,15 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTextField("Product Name", "Enter product name", (value) {
-                productName = value;
-              }),
+              _buildTextField("Product Name", "Enter product name", (value) => productName = value),
               _buildCategoryDropdown(),
-              _buildTextField("Quantity (kg/liter)", "Enter quantity", (value) {
-                quantity = double.tryParse(value);
-              }, keyboardType: TextInputType.number),
-              _buildTextField("Price (₹)", "Enter price", (value) {
-                price = double.tryParse(value);
-              }, keyboardType: TextInputType.number),
-              _buildTextField("Description", "Enter product description", (value) {
-                description = value;
-              }, maxLines: 3),
-              SizedBox(height: 15),
-              _buildImageUploadSection(),
+              _buildTextField("Quantity (kg/liter)", "Enter quantity",
+                      (value) => quantity = double.tryParse(value) ?? 0, keyboardType: TextInputType.number),
+              _buildTextField("Price (₹)", "Enter price",
+                      (value) => price = double.tryParse(value) ?? 0, keyboardType: TextInputType.number),
+              _buildTextField("Description", "Enter product description", (value) => description = value, maxLines: 3),
+              _buildImageUrlField(),
+              _buildImagePreview(),
               SizedBox(height: 20),
               _buildSubmitButton(),
             ],
@@ -156,23 +166,12 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
       child: DropdownButtonFormField<String>(
         decoration: InputDecoration(
           labelText: "Category",
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
         value: selectedCategory,
-        items: _categories.map((category) {
-          return DropdownMenuItem<String>(
-            value: category,
-            child: Text(category),
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() {
-            selectedCategory = value;
-          });
-        },
-        validator: (value) => value == null ? "Please select a category" : null,
+        items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+        onChanged: (val) => setState(() => selectedCategory = val),
+        validator: (val) => val == null ? "Please select a category" : null,
       ),
     );
   }
@@ -187,42 +186,57 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        validator: (value) => value!.isEmpty ? "$label is required" : null,
-        onSaved: (value) => onSaved(value!),
+        validator: (value) => value == null || value.isEmpty ? "$label is required" : null,
+        onSaved: (value) => onSaved(value ?? ""),
       ),
     );
   }
 
-  Widget _buildImageUploadSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Upload Product Image",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  Widget _buildImageUrlField() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: "Image URL or Asset Path",
+          hintText: "e.g. https://... or assets/your_image.jpg",
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        SizedBox(height: 10),
-        GestureDetector(
-          onTap: _pickImage,
-          child: Container(
-            height: 150,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade400),
-            ),
-            child: Center(
-              child: _image == null
-                  ? Icon(Icons.camera_alt, color: Colors.green, size: 40)
-                  : Image.file(_image!, fit: BoxFit.cover),
-            ),
-          ),
+        validator: (value) {
+          if (value == null || value.isEmpty) return "Image URL is required";
+          if (!_isValidImageUrl(value)) return "Enter a valid image URL or asset path";
+          return null;
+        },
+        onChanged: _updateImagePreview,
+        onSaved: (value) => imageUrl = value ?? '',
+      ),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    if (imageUrl.isEmpty || !_isValidImageUrl(imageUrl)) return SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: imageUrl.startsWith('assets/')
+            ? Image.asset(imageUrl, height: 180, width: double.infinity, fit: BoxFit.cover)
+            : Image.network(
+          imageUrl,
+          height: 180,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              height: 180,
+              color: Colors.grey[300],
+              child: Center(child: Text("⚠️ Image not available")),
+            );
+          },
         ),
-      ],
+      ),
     );
   }
 
@@ -233,15 +247,10 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
         onPressed: _submitProduct,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green.shade700,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: EdgeInsets.symmetric(vertical: 14),
         ),
-        child: Text(
-          "Add Product",
-          style: TextStyle(fontSize: 18, color: Colors.white),
-        ),
+        child: Text("Submit for Approval", style: TextStyle(fontSize: 18, color: Colors.white)),
       ),
     );
   }
