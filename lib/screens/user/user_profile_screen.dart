@@ -163,26 +163,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
 
               SizedBox(height: 16),
-
-              // Logout Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => logout(context),
-                  icon: Icon(Icons.logout, color: Colors.white),
-                  label: Text(
-                    'Logout',
-                    style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    backgroundColor: Color(0xFFD32F2F),
-                  ),
-                ),
-              ),
+              
             ],
           ),
         ),

@@ -46,6 +46,11 @@ dependencies:
   url_launcher: ^6.3.1
   firebase_storage: ^12.4.4
   firebase_messaging: ^15.2.4
+  font_awesome_flutter: ^10.7.0
+
+    # eSewa Flutter SDK
+  esewa_flutter_sdk:
+    path: ./esewa_flutter_sdk
 
 dev_dependencies:
   flutter_test:
@@ -79,6 +84,30 @@ flutter:
     - assets/carrot.jpg
     - assets/potato.jpg
     - assets/tomato.jpg
+    - assets/barley.jpg
+    - assets/gingerherbs.jpg
+    - assets/lemonbalm.jpg
+    - assets/maizecrops.jpg
+    - assets/millet.png
+    - assets/onioncrops.jpg
+    - assets/rice.jpg
+    - assets/ricecrops.jpg
+    - assets/sugarcanecrops.jpg
+    - assets/sunflowerherbs.jpg
+    - assets/turnipherbs.jpg
+    - assets/wheatcrops.jpg
+    - assets/buffalomilk.jpg
+    - assets/cheese.jpg
+    - assets/cream.jpg
+    - assets/curd.jpg
+    - assets/grapes.jpg
+    - assets/guava.jpg
+    - assets/lichi.jpg
+    - assets/mango.jpg
+    - assets/milk.jpg
+    - assets/orange.jpg
+    - assets/pineapple.jpg
+
 
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg

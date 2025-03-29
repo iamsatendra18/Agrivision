@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:agrivision/screens/auth/forget_password_screen.dart'
     show ForgotPasswordScreen;
-import 'package:agrivision/screens/trader/home_page.dart';
+import 'package:agrivision/screens/trader/trader_terms_and_conditions_screen.dart';
+
 import 'package:agrivision/screens/user/cart_basket_screen.dart';
 import 'package:agrivision/screens/user/home_screen.dart';
 import 'package:agrivision/screens/auth/login_screen.dart';
@@ -13,17 +14,26 @@ import 'package:agrivision/screens/user/user_profile_screen.dart';
 
 import 'package:agrivision/utiles/routes/routes_name.dart';
 
+import '../../screens/admin/admin_contact_messages_tab.dart';
 import '../../screens/admin/admin_dashboard_screen.dart';
+import '../../screens/admin/climate_guideness_tab.dart';
+import '../../screens/admin/crop_recommendation_tab.dart';
 import '../../screens/auth/admin_login_screen.dart';
 import '../../screens/trader/trader_add_product_screen.dart';
 import '../../screens/trader/trader_climate_guidencess_screen.dart';
 import '../../screens/trader/trader_contact_us_screen.dart';
+import '../../screens/trader/trader_crop_recommendation_screen.dart';
 import '../../screens/trader/trader_edit_product_screen.dart';
 import '../../screens/trader/trader_notification_screen.dart';
 import '../../screens/trader/trader_order_screen.dart';
 import '../../screens/trader/trader_payment_screen.dart';
+import '../../screens/trader/trader_privacy_policy_screen.dart';
 import '../../screens/trader/trader_profile_page.dart';
 import '../../screens/trader/trader_service_screen.dart';
+import '../../screens/trader/trader_terms_and_conditions_screen.dart';
+import '../../screens/user/contact_us_screen.dart';
+import '../../screens/user/privacy_policy_screen.dart';
+import '../../screens/user/terms_and_conditions_screen.dart';
 import '../../screens/user/user_notification_screen.dart';
 import '../../screens/trader/trader_product_list_screen.dart';
 import '../../screens/user/review_screen.dart';
@@ -97,8 +107,7 @@ class Routes {
           builder: (_) => ProductDetailScreen(),
           settings: RouteSettings(arguments: args),
         );
-      case RoutesName.homePage:
-        return MaterialPageRoute(builder: (_) => HomePage());
+
       case RoutesName.adminLoginScreen:
         return MaterialPageRoute(builder: (_) => AdminLoginScreen());
       case RoutesName.adminDashboardScreen:
@@ -117,6 +126,25 @@ class Routes {
         return MaterialPageRoute(builder: (_) => AnalyticsTab());
         case RoutesName.usersManagementTab:
       return MaterialPageRoute(builder: (_) => UsersManagementTab());
+      case RoutesName.climateGuidenessTab:
+        return MaterialPageRoute(builder: (_) => ClimateGuidenessTab());
+      case RoutesName.cropRecommendationTab:
+        return MaterialPageRoute(builder: (_) => CropRecommendationTab());
+      case RoutesName.traderCropRecommendationScreen:
+        return MaterialPageRoute(builder: (_) => TraderCropRecommendationScreen());
+      case RoutesName.contactUsScreen:
+        return MaterialPageRoute(builder: (_) => ContactUsScreen());
+      case RoutesName.adminContactMessagesTab:
+        return MaterialPageRoute(builder: (_) => AdminContactMessagesTab());
+      case RoutesName.privacyPolicyScreen:
+        return MaterialPageRoute(builder: (_) => PrivacyPolicyScreen());
+      case RoutesName.traderPrivacyPolicyScreen:
+        return MaterialPageRoute(builder: (_) => TraderPrivacyPolicyScreen());
+      case RoutesName.termsAndConditionsScreen:
+        return MaterialPageRoute(builder: (_) => TermsAndConditionsScreen());
+      case RoutesName.tradertermsAndConditionsScreen:
+        return MaterialPageRoute(builder: (_) => TraderTermsAndConditionsScreen());
+
 
 
 

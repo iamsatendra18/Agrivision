@@ -152,6 +152,7 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
               _buildImageUrlField(),
               _buildImagePreview(),
               SizedBox(height: 20),
+
               _buildSubmitButton(),
             ],
           ),

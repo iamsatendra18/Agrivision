@@ -1,199 +1,274 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class VerifiedProductsTab extends StatelessWidget {
+class VerifiedProductsTab extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Verify Products'),
-        backgroundColor: Color(0xFF2E7D32),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Products Pending Verification',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+  State<VerifiedProductsTab> createState() => _VerifiedProductsTabState();
+}
+
+class _VerifiedProductsTabState extends State<VerifiedProductsTab>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  String? selectedTraderId;
+
+  @override
+  void initState() {
+    _tabController = TabController(length: 2, vsync: this);
+    super.initState();
+  }
+
+  Future<void> _deleteProduct(String docId, BuildContext context) async {
+    try {
+      await FirebaseFirestore.instance.collection('products').doc(docId).delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('🗑️ Product Deleted'), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Failed to delete: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Widget _buildProductList(bool isVerified) {
+    Query query = FirebaseFirestore.instance
+        .collection('products')
+        .where('isVerified', isEqualTo: isVerified);
+
+    if (selectedTraderId != null && selectedTraderId != 'ALL') {
+      query = query.where('createdBy', isEqualTo: selectedTraderId);
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: query.snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting)
+          return Center(child: CircularProgressIndicator());
+        if (snapshot.hasError)
+          return Center(child: Text('❌ Error loading products'));
+
+        final products = snapshot.data?.docs ?? [];
+
+        if (products.isEmpty) {
+          return Center(
+            child: Text(
+              isVerified ? "✅ No verified products available." : "✅ No products pending verification.",
+              style: TextStyle(fontSize: 16),
             ),
-            SizedBox(height: 20),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('products')
-                    .where('isVerified', isEqualTo: false)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
+          );
+        }
+
+        return ListView.builder(
+          itemCount: products.length,
+          itemBuilder: (context, index) {
+            final doc = products[index];
+            final data = doc.data() as Map<String, dynamic>;
+
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(data['createdBy'])
+                  .get(),
+              builder: (context, traderSnapshot) {
+                String traderInfo = "👤 Unknown Trader";
+                if (traderSnapshot.hasData && traderSnapshot.data!.exists) {
+                  final trader = traderSnapshot.data!.data() as Map<String, dynamic>;
+                  if (trader['role'] == 'Trader') {
+                    traderInfo = '''
+👤 ${trader['fullName'] ?? 'N/A'}
+📞 ${trader['phone'] ?? 'N/A'}
+🏠 ${trader['address'] ?? 'N/A'}''';
+                  } else {
+                    return SizedBox();
                   }
+                }
 
-                  if (snapshot.hasError) {
-                    return Center(child: Text('❌ Error loading products'));
-                  }
+                final imageUrl = data['imageUrl']?.toString() ?? '';
+                final isValidNetworkImage = imageUrl.startsWith('http');
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return Center(
-                      child: Text(
-                        "✅ No products pending verification.",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    );
-                  }
-
-                  final products = snapshot.data!.docs;
-
-                  return ListView.builder(
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final doc = products[index];
-                      final data = doc.data() as Map<String, dynamic>;
-
-                      return Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: isValidNetworkImage
+                              ? Image.network(
+                            imageUrl,
+                            height: 80,
+                            width: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 80,
+                              width: 80,
+                              color: Colors.grey[300],
+                              child: Icon(Icons.broken_image),
+                            ),
+                          )
+                              : imageUrl.contains("assets/")
+                              ? Image.asset(
+                            imageUrl,
+                            height: 80,
+                            width: 80,
+                            fit: BoxFit.cover,
+                          )
+                              : Image.asset(
+                            'assets/agrivision_logo.png',
+                            height: 80,
+                            width: 80,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                        margin: EdgeInsets.symmetric(vertical: 10),
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Row(
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Product Image
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: data['imageUrl'] != null &&
-                                    data['imageUrl'].toString().isNotEmpty
-                                    ? Image.network(
-                                  data['imageUrl'],
-                                  height: 70,
-                                  width: 70,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(Icons.broken_image),
-                                )
-                                    : Image.asset(
-                                  'assets/agrivision_logo.png',
-                                  height: 70,
-                                  width: 70,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-
-                              // Product Details
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      data['name'] ?? 'Unnamed Product',
-                                      style: TextStyle(
-                                          fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      data['description'] ?? 'No description provided',
-                                      style: TextStyle(color: Colors.grey[700]),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      '₹${data['price']} • ${data['quantity']}kg',
-                                      style: TextStyle(color: Colors.green[700]),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Action Buttons
-                              Column(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.check, color: Colors.green),
-                                    onPressed: () async {
-                                      try {
-                                        await FirebaseFirestore.instance
-                                            .collection('products')
-                                            .doc(doc.id)
-                                            .update({'isVerified': true});
-
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('✅ Product Verified'),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('❌ Failed to verify: $e'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.close, color: Colors.red),
-                                    onPressed: () async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: Text("Reject Product"),
-                                          content: Text(
-                                              "Are you sure you want to reject and delete this product?"),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(ctx, false),
-                                              child: Text("Cancel"),
-                                            ),
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(ctx, true),
-                                              child: Text("Delete"),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-
-                                      if (confirm == true) {
-                                        try {
-                                          await FirebaseFirestore.instance
-                                              .collection('products')
-                                              .doc(doc.id)
-                                              .delete();
-
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text('❌ Product Rejected & Deleted'),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                        } catch (e) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text('❌ Failed to delete: $e'),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
+                              Text(data['name'] ?? 'Unnamed Product',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              SizedBox(height: 4),
+                              Text(data['description'] ?? '',
+                                  style: TextStyle(color: Colors.grey[700]),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis),
+                              SizedBox(height: 4),
+                              Text('₹${data['price']} • ${data['quantity']}kg',
+                                  style: TextStyle(color: Colors.green[700])),
+                              Divider(),
+                              Text(traderInfo, style: TextStyle(fontSize: 13, color: Colors.black87)),
                             ],
                           ),
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
+                        Column(
+                          children: [
+                            if (!isVerified)
+                              IconButton(
+                                icon: Icon(Icons.check_circle, color: Colors.green),
+                                onPressed: () async {
+                                  try {
+                                    await FirebaseFirestore.instance
+                                        .collection('products')
+                                        .doc(doc.id)
+                                        .update({'isVerified': true});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('✅ Product Verified'), backgroundColor: Colors.green),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('❌ Failed: $e'), backgroundColor: Colors.red),
+                                    );
+                                  }
+                                },
+                              ),
+                            IconButton(
+                              icon: Icon(Icons.delete_forever, color: Colors.redAccent),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text("Delete Product"),
+                                    content: Text("Are you sure you want to delete this product?"),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Cancel")),
+                                      TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Delete")),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  _deleteProduct(doc.id, context);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTraderDropdown() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'Trader').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return SizedBox();
+
+        final traders = snapshot.data!.docs;
+
+        return DropdownButtonFormField<String>(
+          isExpanded: true,
+          value: selectedTraderId ?? 'ALL',
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 10),
+          ),
+          items: [
+            DropdownMenuItem(value: 'ALL', child: Text("📦 All Traders")),
+            ...traders.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final name = data['fullName']?.toString().trim();
+              return DropdownMenuItem(
+                value: doc.id,
+                child: Text(name != null && name.isNotEmpty ? name : '👤 ${doc.id.substring(0, 6)}'),
+              );
+            }).toList(),
+          ],
+          onChanged: (value) {
+            setState(() {
+              selectedTraderId = value == 'ALL' ? null : value;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Product Verification'),
+          backgroundColor: Color(0xFF2E7D32),
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(100),
+            child: Column(
+              children: [
+                TabBar(
+                  controller: _tabController,
+                  indicatorColor: Colors.white,
+                  tabs: [
+                    Tab(text: 'Pending'),
+                    Tab(text: 'Verified'),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: _buildTraderDropdown(),
+                )
+              ],
             ),
+          ),
+        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildProductList(false),
+            _buildProductList(true),
           ],
         ),
       ),

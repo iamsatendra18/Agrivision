@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agrivision/utiles/routes/routes_name.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -41,33 +43,78 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _launchURL(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw 'Could not launch $url';
+    }
+  }
+
+  void _launchEmail(String email) async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: email,
+    );
+    if (!await launchUrl(uri)) {
+      throw 'Could not launch email';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-
     return SafeArea(
       child: Scaffold(
         backgroundColor: Color(0xFFF1F8E9),
-        body: Column(
-          children: [
-            _buildAppBar(screenHeight),
-            _buildSearchField(),
-            _buildCategoryChips(),
-            Expanded(child: _buildProductGrid()),
-          ],
+        drawer: _buildDrawer(context),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 600) {
+              return Column(
+                children: [
+                  _buildAppBar(context),
+                  _buildSearchField(),
+                  _buildCategoryChips(),
+                  Expanded(child: _buildProductGrid(crossAxisCount: 2)),
+                ],
+              );
+            } else {
+              return Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      children: [
+                        _buildAppBar(context),
+                        _buildSearchField(),
+                        _buildCategoryChips(),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 5,
+                    child: _buildProductGrid(crossAxisCount: 4),
+                  ),
+                ],
+              );
+            }
+          },
         ),
       ),
     );
   }
 
-  Widget _buildAppBar(double screenHeight) {
+  Widget _buildAppBar(BuildContext context) {
     return Container(
       color: Color(0xFF2E7D32),
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Image.asset('assets/agrivision_logo.png', height: screenHeight * 0.06),
-          SizedBox(width: 10),
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.menu, color: Colors.white),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
           Text(
             'Hi, $_username!',
             style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
@@ -161,9 +208,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProductGrid() {
+  Widget _buildProductGrid({required int crossAxisCount}) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('products').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('products')
+          .where('isVerified', isEqualTo: true)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting)
           return Center(child: CircularProgressIndicator());
@@ -187,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.all(12),
           itemCount: products.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
+            crossAxisCount: crossAxisCount,
             mainAxisSpacing: 14,
             crossAxisSpacing: 14,
             childAspectRatio: 0.7,
@@ -247,8 +297,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(5, (i) =>
-                                Icon(Icons.star, size: 16, color: Colors.orange[400])),
+                            children: List.generate(5,
+                                    (i) => Icon(Icons.star, size: 16, color: Colors.orange[400])),
                           ),
                           SizedBox(height: 6),
                           ElevatedButton(
@@ -284,6 +334,79 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Color(0xFF2E7D32)),
+            child: Center(
+              child: Image.asset('assets/agrivision_logo.png', height: 75),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.share, color: Colors.green),
+            title: Text('Share Agrivision'),
+            onTap: () {},
+          ),
+          ListTile(
+            leading: Icon(Icons.privacy_tip, color: Colors.green),
+            title: Text('Privacy Policy'),
+            onTap: () {
+              Navigator.pushNamed(context, RoutesName.privacyPolicyScreen);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.rule, color: Colors.green),
+            title: Text('Terms and Conditions'),
+            onTap: () {
+              Navigator.pushNamed(context, RoutesName.termsAndConditionsScreen);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.contact_page, color: Colors.green),
+            title: Text('Contact Us'),
+            onTap: () {
+              Navigator.pushNamed(context, RoutesName.contactUsScreen);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.logout, color: Colors.red),
+            title: Text('Logout'),
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushNamedAndRemoveUntil(context, RoutesName.loginScreen, (route) => false);
+            },
+          ),
+          Divider(),
+          Padding(
+            padding: EdgeInsets.all(8),
+            child: Text('Join us on social media:'),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              IconButton(
+                icon: FaIcon(FontAwesomeIcons.facebook, color: Colors.blue),
+                onPressed: () => _launchURL("https://www.facebook.com/satendra.kushwaha.399826"),
+              ),
+              IconButton(
+                icon: FaIcon(FontAwesomeIcons.instagram, color: Colors.purple),
+                onPressed: () => _launchURL("https://www.instagram.com/iam_sattu_18"),
+              ),
+              IconButton(
+                icon: FaIcon(FontAwesomeIcons.envelope, color: Colors.green),
+                onPressed: () => _launchEmail("satendrakushwaha2021@gmail.com"),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -5,14 +5,18 @@ import 'package:agrivision/screens/trader/trader_edit_product_screen.dart';
 import 'package:agrivision/screens/trader/trader_notification_screen.dart';
 import 'package:agrivision/screens/trader/trader_order_screen.dart';
 import 'package:agrivision/screens/trader/trader_payment_screen.dart';
+import 'package:agrivision/screens/trader/trader_privacy_policy_screen.dart';
 import 'package:agrivision/screens/trader/trader_product_list_screen.dart';
 import 'package:agrivision/screens/trader/trader_profile_page.dart';
 import 'package:agrivision/screens/trader/trader_service_screen.dart';
+import 'package:agrivision/screens/trader/trader_terms_and_conditions_screen.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../utiles/routes/routes_name.dart';
-import 'home_page.dart';
+
+
 
 class TraderHomeScreen extends StatefulWidget {
   @override
@@ -89,15 +93,16 @@ class _TraderHomeScreenState extends State<TraderHomeScreen> {
                 );
               },
             ),
-            ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Home'),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HomePage())),
-            ),
+
             ListTile(
               leading: Icon(Icons.build),
               title: Text('Service'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderServiceScreen())),
+            ),
+            ListTile(
+              leading: Icon(Icons.agriculture),
+              title: Text('Crop Recommendation'),
+              onTap: () => Navigator.pushNamed(context, RoutesName.traderCropRecommendationScreen),
             ),
             ListTile(
               leading: Icon(Icons.cloud),
@@ -128,6 +133,15 @@ class _TraderHomeScreenState extends State<TraderHomeScreen> {
               leading: Icon(Icons.contact_mail),
               title: Text('Contact Us'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderContactUsScreen())),
+            ),ListTile(
+              leading: Icon(Icons.contact_mail),
+              title: Text('Privacy Policy'),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderPrivacyPolicyScreen())),
+            ),
+            ListTile(
+              leading: Icon(Icons.home),
+              title: Text('Terms and Conditions'),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderTermsAndConditionsScreen())),
             ),
             ListTile(
               leading: Icon(Icons.logout),

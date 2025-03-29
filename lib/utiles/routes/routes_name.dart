@@ -31,6 +31,20 @@ class RoutesName {
   static const String paymentsTab = 'payments';
   static const String analyticsTab = 'analytics';
   static const String usersManagementTab = 'users_management';
+  static const String climateGuidenessTab = 'climate_guideness_tab';
+  static const String cropRecommendationTab = 'crop_recommendation_tab';
+  static const String traderCropRecommendationScreen = 'trader_crop_recommendation_screen';
+  static const String contactUsScreen = 'contact_us_screen';
+  static const String adminContactMessagesTab = 'admin_contact_messages_tab';
+  static const String privacyPolicyScreen = 'privacyPolicyScreen';
+  static const String termsAndConditionsScreen = 'terms_conditions_screen';
+  static const String traderPrivacyPolicyScreen = 'trader_privacy_Policy_Screen';
+  static const String tradertermsAndConditionsScreen = 'trader_terms_conditions_screen';
+
+
+
+
+
 
 
 

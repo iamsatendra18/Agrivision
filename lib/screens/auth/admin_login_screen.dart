@@ -77,7 +77,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: const Color(0xFFF1F8E9),
       appBar: AppBar(
@@ -91,130 +92,128 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           },
         ),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(size.width > 600 ? 40 : 20),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  // 👋 Welcome Text
-                  Text(
-                    'Welcome Back!',
-                    style: TextStyle(
-                      fontSize: 35,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2E7D32),
-                    ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(size.width > 600 ? 40 : 20),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // 👋 Welcome Text
+                Text(
+                  'Welcome Back!',
+                  style: TextStyle(
+                    fontSize: 35,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E7D32),
                   ),
-                  SizedBox(height: 15),
-                  Text(
-                    'Login to continue',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.green[800],
-                    ),
+                ),
+                SizedBox(height: height * 0.01),
+                Text(
+                  'Login to continue',
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.green[800],
                   ),
-                  SizedBox(height: 75),
+                ),
+                SizedBox(height: height * 0.03),
 
-                  // 🌾 Logo
-                  CircleAvatar(
-                    radius: size.width > 600 ? 70 : 55,
-                    backgroundColor: const Color(0xFF2E7D32),
-                    child: CircleAvatar(
-                      radius: size.width > 600 ? 65 : 50,
-                      backgroundImage:
-                      const AssetImage('assets/agrivision_logo.png'),
-                    ),
+                // 🌾 Logo
+                CircleAvatar(
+                  radius: size.width > 600 ? 70 : 55,
+                  backgroundColor: const Color(0xFF2E7D32),
+                  child: CircleAvatar(
+                    radius: size.width > 600 ? 65 : 50,
+                    backgroundImage:
+                    const AssetImage('assets/agrivision_logo.png'),
                   ),
-                  SizedBox(height: size.height * 0.03),
+                ),
+                SizedBox(height: size.height * 0.05),
 
-                  // 📧 Email Field
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: const Icon(Icons.email, color: Color(0xFF2E7D32)),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFE8F5E9),
+                // 📧 Email Field
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: const Icon(Icons.email, color: Color(0xFF2E7D32)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                          .hasMatch(value)) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
+                    filled: true,
+                    fillColor: const Color(0xFFE8F5E9),
                   ),
-                  SizedBox(height: size.height * 0.02),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: size.height * 0.02),
 
-                  // 🔒 Password Field
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock, color: Color(0xFF2E7D32)),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                          color: const Color(0xFF2E7D32),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                // 🔒 Password Field
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock, color: Color(0xFF2E7D32)),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        color: const Color(0xFF2E7D32),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFE8F5E9),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFE8F5E9),
                   ),
-                  SizedBox(height: size.height * 0.03),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: size.height * 0.03),
 
-                  // ✅ Login Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _login,
-                      icon: const Icon(Icons.login, color: Colors.white),
-                      label: Text(
-                        _isLoading ? 'Logging in...' : 'Login',
-                        style: const TextStyle(fontSize: 18, color: Colors.white),
+                // ✅ Login Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _login,
+                    icon: const Icon(Icons.login, color: Colors.white),
+                    label: Text(
+                      _isLoading ? 'Logging in...' : 'Login',
+                      style: const TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                          vertical: size.height * 0.02),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                            vertical: size.height * 0.02),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        backgroundColor: const Color(0xFF2E7D32),
-                      ),
+                      backgroundColor: const Color(0xFF2E7D32),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

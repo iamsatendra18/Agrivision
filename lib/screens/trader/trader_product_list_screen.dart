@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'trader_edit_product_screen.dart';
-import 'trader_home_screen.dart'; // import for navigating back
+import 'trader_home_screen.dart';
 
 class TraderProductListScreen extends StatefulWidget {
   @override
@@ -82,6 +82,7 @@ class _TraderProductListScreenState extends State<TraderProductListScreen> {
                 final doc = products[index];
                 final data = doc.data() as Map<String, dynamic>;
                 final imageUrl = data['imageUrl']?.toString() ?? '';
+                final isVerified = data['isVerified'] == true;
 
                 ImageProvider imageProvider;
                 if (imageUrl.startsWith('assets/')) {
@@ -101,7 +102,26 @@ class _TraderProductListScreenState extends State<TraderProductListScreen> {
                       backgroundImage: imageProvider,
                       radius: 25,
                     ),
-                    title: Text(data['name']),
+                    title: Row(
+                      children: [
+                        Expanded(child: Text(data['name'])),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isVerified ? Colors.green[100] : Colors.orange[100],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            isVerified ? 'Verified' : 'Pending',
+                            style: TextStyle(
+                              color: isVerified ? Colors.green : Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     subtitle: Text("₹${data['price']} • ${data['quantity']}kg"),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
