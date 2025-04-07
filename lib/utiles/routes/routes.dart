@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:agrivision/screens/auth/forget_password_screen.dart'
-    show ForgotPasswordScreen;
+import 'package:agrivision/screens/auth/forget_password_screen.dart' show ForgotPasswordScreen;
 import 'package:agrivision/screens/trader/trader_terms_and_conditions_screen.dart';
-
 import 'package:agrivision/screens/user/cart_basket_screen.dart';
 import 'package:agrivision/screens/user/home_screen.dart';
 import 'package:agrivision/screens/auth/login_screen.dart';
@@ -11,13 +9,12 @@ import 'package:agrivision/screens/trader/trader_home_screen.dart';
 import 'package:agrivision/screens/user/navigation_menu.dart';
 import 'package:agrivision/screens/user/product_detail_screen.dart';
 import 'package:agrivision/screens/user/user_profile_screen.dart';
-
 import 'package:agrivision/utiles/routes/routes_name.dart';
-
 import '../../screens/admin/admin_contact_messages_tab.dart';
 import '../../screens/admin/admin_dashboard_screen.dart';
 import '../../screens/admin/climate_guideness_tab.dart';
 import '../../screens/admin/crop_recommendation_tab.dart';
+import '../../screens/admin/view_response_screen.dart';
 import '../../screens/auth/admin_login_screen.dart';
 import '../../screens/trader/trader_add_product_screen.dart';
 import '../../screens/trader/trader_climate_guidencess_screen.dart';
@@ -30,15 +27,17 @@ import '../../screens/trader/trader_payment_screen.dart';
 import '../../screens/trader/trader_privacy_policy_screen.dart';
 import '../../screens/trader/trader_profile_page.dart';
 import '../../screens/trader/trader_service_screen.dart';
-import '../../screens/trader/trader_terms_and_conditions_screen.dart';
+import '../../screens/user/checkout_details_screen.dart';
 import '../../screens/user/contact_us_screen.dart';
+import '../../screens/user/location_picker_screen.dart';
+import '../../screens/user/order_details_screen.dart';
+import '../../screens/user/order_map_summary_screen.dart';
+import '../../screens/user/payments/esewa_payment_screen.dart';
 import '../../screens/user/privacy_policy_screen.dart';
 import '../../screens/user/terms_and_conditions_screen.dart';
 import '../../screens/user/user_notification_screen.dart';
-import '../../screens/trader/trader_product_list_screen.dart';
 import '../../screens/user/review_screen.dart';
-
-// Admin additional tabs
+import '../../screens/trader/trader_product_list_screen.dart';
 import 'package:agrivision/screens/admin/verified_traders_tab.dart';
 import 'package:agrivision/screens/admin/verified_products_tab.dart';
 import 'package:agrivision/screens/admin/order_history_tab.dart';
@@ -46,9 +45,6 @@ import 'package:agrivision/screens/admin/notifications_tab.dart';
 import 'package:agrivision/screens/admin/payments_tab.dart';
 import 'package:agrivision/screens/admin/analytics_tab.dart';
 import 'package:agrivision/screens/admin/users_management_tab.dart';
-
-
-
 
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -79,9 +75,7 @@ class Routes {
       case RoutesName.traderServiceScreen:
         return MaterialPageRoute(builder: (_) => TraderServiceScreen());
       case RoutesName.traderClimateGuidenessScreen:
-        return MaterialPageRoute(
-          builder: (_) => TraderClimateGuidencessScreen(),
-        );
+        return MaterialPageRoute(builder: (_) => TraderClimateGuidencessScreen());
       case RoutesName.traderPaymentScreen:
         return MaterialPageRoute(builder: (_) => TraderPaymentScreen());
       case RoutesName.traderOrderScreen:
@@ -107,7 +101,6 @@ class Routes {
           builder: (_) => ProductDetailScreen(),
           settings: RouteSettings(arguments: args),
         );
-
       case RoutesName.adminLoginScreen:
         return MaterialPageRoute(builder: (_) => AdminLoginScreen());
       case RoutesName.adminDashboardScreen:
@@ -124,8 +117,8 @@ class Routes {
         return MaterialPageRoute(builder: (_) => PaymentsTab());
       case RoutesName.analyticsTab:
         return MaterialPageRoute(builder: (_) => AnalyticsTab());
-        case RoutesName.usersManagementTab:
-      return MaterialPageRoute(builder: (_) => UsersManagementTab());
+      case RoutesName.usersManagementTab:
+        return MaterialPageRoute(builder: (_) => UsersManagementTab());
       case RoutesName.climateGuidenessTab:
         return MaterialPageRoute(builder: (_) => ClimateGuidenessTab());
       case RoutesName.cropRecommendationTab:
@@ -144,12 +137,38 @@ class Routes {
         return MaterialPageRoute(builder: (_) => TermsAndConditionsScreen());
       case RoutesName.tradertermsAndConditionsScreen:
         return MaterialPageRoute(builder: (_) => TraderTermsAndConditionsScreen());
-
-
-
-
-
-
+      case RoutesName.esewaPaymentScreen:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => EsewaPaymentScreen(
+            totalAmount: args['totalAmount'] ?? 0.0,
+          ),
+        );
+      case RoutesName.orderDetailsScreen:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => OrderDetailsScreen(orderData: args),
+        );
+      case RoutesName.checkoutDetailsScreen:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => CheckoutDetailsScreen(
+            totalAmount: args['totalAmount'] ?? 0.0,
+            itemCount: args['itemCount'] ?? 0,
+          ),
+        );
+      case RoutesName.locationPickerScreen:
+        return MaterialPageRoute(builder: (_) => LocationPickerScreen());
+      case RoutesName.orderMapSummaryScreen:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => OrderMapSummaryScreen(
+            latitude: args['latitude'],
+            longitude: args['longitude'],
+          ),
+        );
+      case RoutesName.viewResponseScreen:
+        return MaterialPageRoute(builder: (_) => ViewResponseScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(body: Center(child: Text('No routes defined'))),

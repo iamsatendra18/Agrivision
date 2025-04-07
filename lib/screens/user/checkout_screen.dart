@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agrivision/utiles/routes/routes_name.dart';
+import 'package:agrivision/screens/user/payments/esewa_payment_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -50,24 +51,66 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  Future<void> _openPaymentScreen() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EsewaPaymentScreen(
+          totalAmount: totalAmount,
+        ),
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (result == true) {
+      _confirmAndPay();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("⚠️ Payment was cancelled or failed.")),
+      );
+    }
+  }
+
   Future<void> _confirmAndPay() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     try {
-      final itemsRef = FirebaseFirestore.instance
+      final cartItems = await FirebaseFirestore.instance
           .collection('cart')
           .doc(user.uid)
-          .collection('items');
+          .collection('items')
+          .get();
 
-      final items = await itemsRef.get();
+      List<Map<String, dynamic>> items = [];
 
-      for (var doc in items.docs) {
+      for (var doc in cartItems.docs) {
+        final data = doc.data();
+        items.add({
+          'name': data['name'],
+          'price': data['price'],
+          'quantity': data['quantity'],
+          'imageUrl': data['imageUrl'],
+        });
+      }
+
+      await FirebaseFirestore.instance.collection('orders').add({
+        'userId': user.uid,
+        'items': items,
+        'totalAmount': totalAmount,
+        'paymentMethod': 'eSewa',
+        'deliveryAddress': 'Village Road, Agri Farm, Nepal',
+        'status': 'Pending',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      for (var doc in cartItems.docs) {
         await doc.reference.delete();
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ Order confirmed & paid!")),
+        const SnackBar(content: Text("✅ Order placed successfully!")),
       );
 
       Navigator.pushNamedAndRemoveUntil(
@@ -77,7 +120,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Failed to confirm order: $e")),
+        SnackBar(content: Text("❌ Error placing order: $e")),
       );
     }
   }
@@ -86,16 +129,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Cancel Order"),
-        content: Text("Are you sure you want to cancel your order?"),
+        title: const Text("Cancel Order"),
+        content: const Text("Are you sure you want to cancel your order?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text("No"),
+            child: const Text("No"),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text("Yes, Cancel"),
+            child: const Text("Yes, Cancel"),
           ),
         ],
       ),
@@ -119,7 +162,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("🗑️ Order cancelled and cart cleared.")),
+        const SnackBar(content: Text("🗑️ Order cancelled and cart cleared.")),
       );
 
       Navigator.pushNamedAndRemoveUntil(
@@ -151,7 +194,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
         child: isLoading
-            ? Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -159,7 +202,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 50,
                   backgroundImage: AssetImage('assets/agricultures_logo.png'),
                   backgroundColor: Colors.white,
@@ -201,10 +244,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           subtitle: const Text('Village Road, Agri Farm, Nepal'),
                         ),
                         const Divider(),
-                        ListTile(
-                          leading: Icon(Icons.payment, color: Colors.green[700]),
-                          title: const Text('Payment Method'),
-                          subtitle: const Text('FonePay / PayPal / eSewa'),
+                        InkWell(
+                          onTap: _openPaymentScreen,
+                          child: ListTile(
+                            leading: Icon(Icons.payment, color: Colors.green[700]),
+                            title: const Text('Payment Method'),
+                            subtitle: const Text('Tap to choose FonePay / PayPal / eSewa'),
+                            trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                          ),
                         ),
                       ],
                     ),
@@ -212,7 +259,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
-                  onPressed: _confirmAndPay,
+                  onPressed: _openPaymentScreen,
                   icon: const Icon(Icons.check_circle, color: Colors.white),
                   label: const Text('Confirm & Pay'),
                   style: ElevatedButton.styleFrom(

@@ -1,133 +1,144 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class TraderOrderScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> orders = [
-    {
-      "product": "🌾 Wheat",
-      "quantity": "100 Kg",
-      "buyer": "Narayan",
-      "status": "Pending",
-      "icon": LucideIcons.wheat,
-    },
-    {
-      "product": "🍏 Apples",
-      "quantity": "50 Kg",
-      "buyer": "Satendra",
-      "status": "Delivered",
-      "icon": LucideIcons.apple,
-    },
-    {
-      "product": "🥦 Spinach",
-      "quantity": "30 Bunches",
-      "buyer": "Krish",
-      "status": "Processing",
-      "icon": LucideIcons.leaf,
-    },
-    {
-      "product": "🥛 Dairy Milk",
-      "quantity": "200 Liters",
-      "buyer": "Farm Fresh Ltd.",
-      "status": "Shipped",
-      "icon": LucideIcons.milk,
-    },
-  ];
+class TraderOrderScreen extends StatefulWidget {
+  const TraderOrderScreen({super.key});
+
+  @override
+  State<TraderOrderScreen> createState() => _TraderOrderScreenState();
+}
+
+class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final List<String> _statuses = ["All", "Pending", "Delivered", "Cancelled"];
+  final String traderId = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _statuses.length, vsync: this);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.green[50],
       appBar: AppBar(
-        title: Text(
-          'My Product Orders',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text("My Product Orders"),
+        centerTitle: true,
         backgroundColor: Colors.green[700],
-        leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft), // Back button
-          onPressed: () {
-            Navigator.pop(context); // Navigate back
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: _statuses.map((status) => Tab(text: status)).toList(),
+          isScrollable: true,
+          indicatorColor: Colors.white,
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: _statuses.map((status) => _buildOrderList(status)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildOrderList(String statusFilter) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('orders').orderBy('timestamp', descending: true).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (snapshot.hasError) return _buildError("Error loading orders");
+
+        final allOrders = snapshot.data?.docs ?? [];
+
+        final filteredOrders = allOrders.where((doc) {
+          final items = doc['items'] as List<dynamic>? ?? [];
+          final hasTraderItems = items.any((item) => item['traderId'] == traderId);
+          final status = doc['status']?.toString().toLowerCase() ?? '';
+          return hasTraderItems &&
+              (statusFilter == "All" || status == statusFilter.toLowerCase());
+        }).toList();
+
+        if (filteredOrders.isEmpty) return _buildEmpty();
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: filteredOrders.length,
+          itemBuilder: (context, index) {
+            final doc = filteredOrders[index];
+            final items = (doc['items'] as List<dynamic>).where((item) => item['traderId'] == traderId).toList();
+            final userId = doc['userId'];
+
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
+              builder: (context, userSnapshot) {
+                if (!userSnapshot.hasData) return const SizedBox.shrink();
+                final user = userSnapshot.data!;
+                final userData = user.data() as Map<String, dynamic>? ?? {};
+
+                return Column(
+                  children: items.map((item) {
+                    return _buildOrderCard(
+                      productName: item['name'] ?? "Product",
+                      quantity: item['quantity'].toString(),
+                      price: item['price'].toString(),
+                      imageUrl: item['imageUrl'] ?? '',
+                      status: doc['status'] ?? "Pending",
+                      buyerName: userData['fullName'] ?? "Buyer",
+                      buyerPhone: userData['phone'] ?? "N/A",
+                      buyerEmail: userData['email'] ?? "",
+                    );
+                  }).toList(),
+                );
+              },
+            );
           },
-        ),
-      ),
-      body: orders.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-        padding: EdgeInsets.all(16),
-        itemCount: orders.length,
-        itemBuilder: (context, index) {
-          return _buildOrderCard(orders[index]);
-        },
-      ),
+        );
+      },
     );
   }
 
-  /// UI when there are no orders
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(LucideIcons.packageSearch, size: 80, color: Colors.grey[400]),
-          SizedBox(height: 10),
-          Text(
-            "No Orders Yet",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600]),
-          ),
-          SizedBox(height: 5),
-          Text(
-            "Your orders will appear here when customers make a purchase.",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Order Card Widget
-  Widget _buildOrderCard(Map<String, dynamic> order) {
+  Widget _buildOrderCard({
+    required String productName,
+    required String quantity,
+    required String price,
+    required String imageUrl,
+    required String status,
+    required String buyerName,
+    required String buyerPhone,
+    required String buyerEmail,
+  }) {
     return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      margin: EdgeInsets.symmetric(vertical: 10),
-      color: Colors.white,
       child: ListTile(
-        contentPadding: EdgeInsets.all(16),
-        leading: Container(
-          padding: EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.green[100],
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            order["icon"] as IconData,
-            color: Colors.green[700],
-            size: 30,
+        contentPadding: const EdgeInsets.all(12),
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: imageUrl.isNotEmpty
+              ? Image.network(imageUrl, width: 55, height: 55, fit: BoxFit.cover)
+              : Container(
+            width: 55,
+            height: 55,
+            color: Colors.grey[300],
+            child: const Icon(Icons.image_not_supported),
           ),
         ),
-        title: Text(
-          order["product"] ?? '',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
+        title: Text(productName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text("Quantity: $quantity"),
+            Text("Price: ₹$price"),
+            const SizedBox(height: 6),
+            Text("Buyer: $buyerName"),
+            Text("Phone: $buyerPhone"),
+            Text("Email: $buyerEmail"),
+            const SizedBox(height: 6),
             Text(
-              "Quantity: ${order["quantity"]}",
-              style: TextStyle(fontSize: 14, color: Colors.black),
-            ),
-            Text(
-              "Buyer: ${order["buyer"]}",
-              style: TextStyle(fontSize: 14, color: Colors.black),
-            ),
-            Text(
-              "Status: ${order["status"]}",
-              style: TextStyle(
-                fontSize: 14,
-                color: _getStatusColor(order["status"] ?? ''),
-                fontWeight: FontWeight.bold,
-              ),
+              "Status: $status",
+              style: TextStyle(fontWeight: FontWeight.bold, color: _getStatusColor(status)),
             ),
           ],
         ),
@@ -135,19 +146,33 @@ class TraderOrderScreen extends StatelessWidget {
     );
   }
 
-  /// Function to determine order status color
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.inbox, size: 80, color: Colors.grey),
+          SizedBox(height: 10),
+          Text("No orders found", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError(String message) {
+    return Center(child: Text(message, style: const TextStyle(color: Colors.red)));
+  }
+
   Color _getStatusColor(String status) {
-    switch (status) {
-      case "Pending":
+    switch (status.toLowerCase()) {
+      case "pending":
         return Colors.orange;
-      case "Processing":
-        return Colors.blue;
-      case "Shipped":
-        return Colors.purple;
-      case "Delivered":
+      case "delivered":
         return Colors.green;
+      case "cancelled":
+        return Colors.red;
       default:
-        return Colors.black;
+        return Colors.grey;
     }
   }
 }

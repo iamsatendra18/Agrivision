@@ -40,6 +40,13 @@ class RoutesName {
   static const String termsAndConditionsScreen = 'terms_conditions_screen';
   static const String traderPrivacyPolicyScreen = 'trader_privacy_Policy_Screen';
   static const String tradertermsAndConditionsScreen = 'trader_terms_conditions_screen';
+  static const String viewResponseScreen = 'view_response_screen';
+  static const String checkoutDetailsScreen = 'checkout_details_screen';
+  static const String locationPickerScreen = 'location_picker_screen';
+  static const String orderMapSummaryScreen = 'order_map_summary_screen';
+  static const String orderDetailsScreen = 'order_details_screen';
+  static const String esewaPaymentScreen = 'esewa_payment_screen';
+
 
 
 

@@ -3,6 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../admin/view_response_screen.dart';
+
 
 class ContactUsScreen extends StatefulWidget {
   @override
@@ -38,8 +40,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   }
 
   void _launchMaps() async {
-    final Uri mapUri =
-    Uri.parse("https://www.google.com/maps/search/?api=1&query=India");
+    final Uri mapUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=India");
     launchUrl(mapUri);
   }
 
@@ -58,6 +59,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
           'message': _messageController.text.trim(),
           'timestamp': FieldValue.serverTimestamp(),
           'userId': FirebaseAuth.instance.currentUser?.uid ?? '',
+          'role': 'User', // ✅ Important to tag as User
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -75,9 +77,9 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   }
 
   void _viewResponse() {
-    // TODO: Replace with navigation to the response screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Navigating to view response...")),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ViewResponseScreen()),
     );
   }
 
@@ -150,9 +152,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 children: [
                   TextFormField(
                     controller: _nameController,
-                    validator: (val) => val == null || val.trim().isEmpty
-                        ? 'Please enter your name'
-                        : null,
+                    validator: (val) =>
+                    val == null || val.trim().isEmpty ? 'Please enter your name' : null,
                     decoration: InputDecoration(
                       hintText: 'Your Name',
                       filled: true,
@@ -163,9 +164,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                   SizedBox(height: 10),
                   TextFormField(
                     controller: _messageController,
-                    validator: (val) => val == null || val.trim().isEmpty
-                        ? 'Please enter your message'
-                        : null,
+                    validator: (val) =>
+                    val == null || val.trim().isEmpty ? 'Please enter your message' : null,
                     maxLines: 4,
                     decoration: InputDecoration(
                       hintText: 'Your Message',
@@ -180,7 +180,6 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
 
             SizedBox(height: 20),
 
-            /// ✅ Send + View Response Buttons
             Row(
               children: [
                 Expanded(

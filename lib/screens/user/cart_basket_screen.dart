@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:agrivision/utiles/routes/routes_name.dart'; // ✅ Import for routes
 
 class CartBasketScreen extends StatefulWidget {
   const CartBasketScreen({super.key});
@@ -74,7 +75,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
   @override
   Widget build(BuildContext context) {
     if (userId == null) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(child: Text("User not logged in")),
       );
     }
@@ -93,12 +94,12 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
             .orderBy('addedAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
           final cartItems = snapshot.data!.docs;
 
           if (cartItems.isEmpty) {
-            return Center(child: Text("🛒 Your cart is empty"));
+            return const Center(child: Text("🛒 Your cart is empty"));
           }
 
           double total = cartItems.fold(0, (sum, doc) {
@@ -132,7 +133,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                         } else if (imageUrl.isNotEmpty) {
                           imageProvider = NetworkImage(imageUrl);
                         } else {
-                          imageProvider = AssetImage('assets/agrivision_logo.png');
+                          imageProvider = const AssetImage('assets/agrivision_logo.png');
                         }
 
                         return Card(
@@ -175,11 +176,17 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                     ),
                   ),
 
-                  // TOTAL & PROCEED BUTTON
                   const SizedBox(height: 10),
-                  Text('💰 Total Amount',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.brown[700])),
+                  Text(
+                    '💰 Total Amount',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown[700],
+                    ),
+                  ),
                   const SizedBox(height: 5),
+
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
@@ -189,11 +196,20 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("Total: ₹${total.toStringAsFixed(2)}",
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(
+                          "Total: ₹${total.toStringAsFixed(2)}",
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
                         ElevatedButton.icon(
                           onPressed: () {
-                            // You can navigate to a Checkout Screen here
+                            Navigator.pushNamed(
+                              context,
+                              RoutesName.checkoutDetailsScreen,
+                              arguments: {
+                                'totalAmount': total,
+                                'itemCount': cartItems.length,
+                              },
+                            );
                           },
                           icon: const Icon(Icons.shopping_cart_checkout, color: Colors.white),
                           label: const Text('Proceed'),
@@ -201,7 +217,9 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
                             backgroundColor: Colors.green[700],
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             textStyle: const TextStyle(fontSize: 18),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                         ),
                       ],
@@ -210,7 +228,6 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
 
                   const SizedBox(height: 20),
 
-                  // SAVE CART BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(

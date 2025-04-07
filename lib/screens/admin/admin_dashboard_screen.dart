@@ -46,8 +46,8 @@ class AdminDashboardScreen extends StatelessWidget {
                 onTap: () => Navigator.pushNamed(context, RoutesName.paymentsTab),
               ),
               _buildDrawerItem(
-                icon: Icons.people,
-                label: 'Users Management',
+                icon: Icons.build,
+                label: 'Services',
                 onTap: () => Navigator.pushNamed(context, RoutesName.usersManagementTab),
               ),
               _buildDrawerItem(

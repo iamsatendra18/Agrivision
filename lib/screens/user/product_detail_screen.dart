@@ -10,7 +10,7 @@ class ProductDetailScreen extends StatelessWidget {
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ You are not logged in')),
+        SnackBar(content: Text(' You are not logged in')),
       );
       return;
     }

@@ -1,76 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class NotificationsTab extends StatelessWidget {
+class NotificationsTab extends StatefulWidget {
+  const NotificationsTab({super.key});
+
+  @override
+  State<NotificationsTab> createState() => _NotificationsTabState();
+}
+
+class _NotificationsTabState extends State<NotificationsTab> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController messageController = TextEditingController();
+  String selectedRole = 'trader';
 
-  void _sendNotification() {
-    // Implement the logic to send notification
+  void _sendNotification(BuildContext context) async {
     String title = titleController.text.trim();
     String message = messageController.text.trim();
-    if (title.isNotEmpty && message.isNotEmpty) {
-      // Send notification logic here
+
+    if (title.isEmpty || message.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("⚠️ Title and message cannot be empty!")),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'title': title,
+        'message': message,
+        'timestamp': FieldValue.serverTimestamp(),
+        'to': selectedRole,
+      });
+
+      titleController.clear();
+      messageController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("✅ Sent to $selectedRole!")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Failed to send: $e")),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Push Notifications'),
-        backgroundColor: Color(0xFF2E7D32),
-      ),
+      appBar: AppBar(title: const Text('Push Notifications'), backgroundColor: Colors.green),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Send Notification',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            DropdownButtonFormField<String>(
+              value: selectedRole,
+              items: const [
+                DropdownMenuItem(value: 'trader', child: Text('Trader')),
+                DropdownMenuItem(value: 'user', child: Text('User')),
+              ],
+              onChanged: (val) => setState(() => selectedRole = val!),
+              decoration: InputDecoration(labelText: 'Send To', border: OutlineInputBorder()),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextField(
               controller: titleController,
-              decoration: InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                filled: true,
-                fillColor: Color(0xFFE8F5E9),
-              ),
+              decoration: InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextField(
               controller: messageController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                labelText: 'Message',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                filled: true,
-                fillColor: Color(0xFFE8F5E9),
-              ),
+              maxLines: 4,
+              decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder()),
             ),
-            SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _sendNotification,
-                child: Text(
-                  'Send Notification',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  backgroundColor: Color(0xFF2E7D32),
-                ),
-              ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _sendNotification(context),
+              child: const Text("Send Notification"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             ),
           ],
         ),

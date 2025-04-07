@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../admin/view_response_screen.dart';
+
 
 class TraderContactUsScreen extends StatefulWidget {
   @override
@@ -76,6 +78,7 @@ class _TraderContactUsScreenState extends State<TraderContactUsScreen> {
           'userId': user.uid,
           'message': _messageController.text.trim(),
           'timestamp': FieldValue.serverTimestamp(),
+          'role': 'Trader', // ✅ Important
         });
 
         _showSnackbar("Message Sent Successfully!");
@@ -89,6 +92,13 @@ class _TraderContactUsScreenState extends State<TraderContactUsScreen> {
     } else {
       _showSnackbar("Please fill in all fields.");
     }
+  }
+
+  void _viewResponse() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ViewResponseScreen()),
+    );
   }
 
   @override
@@ -182,7 +192,6 @@ class _TraderContactUsScreenState extends State<TraderContactUsScreen> {
                       fillColor: Colors.white,
                     ),
                   ),
-
                   SizedBox(height: 10),
                   TextFormField(
                     controller: _messageController,
@@ -211,9 +220,7 @@ class _TraderContactUsScreenState extends State<TraderContactUsScreen> {
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
-                  onPressed: () {
-                    _showSnackbar("Feature coming soon!");
-                  },
+                  onPressed: _viewResponse, // ✅ Updated
                 ),
                 ElevatedButton.icon(
                   icon: Icon(Icons.send),
