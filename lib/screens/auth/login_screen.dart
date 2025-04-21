@@ -156,12 +156,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await authProvider.login(
-                        emailController.text.trim(),
-                        passwordController.text.trim(),
-                        context,
-                        redirectData: redirectData,
-                      );
+                      if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+                        await authProvider.login(
+                          emailController.text.trim(),
+                          passwordController.text.trim(),
+                          context,
+                          redirectData: redirectData,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Please fill all fields")),
+                        );
+                      }
                     },
                     icon: Icon(Icons.login, color: Colors.white),
                     label: Text(
@@ -192,7 +198,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                // ✅ Admin Login Styled as Link
                 TextButton(
                   onPressed: () {
                     Navigator.pushNamed(context, RoutesName.adminLoginScreen);

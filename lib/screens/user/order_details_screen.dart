@@ -8,14 +8,13 @@ class OrderDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productName = orderData['itemName'] ?? 'Product';
-    final quantity = orderData['itemQuantity'] ?? 'N/A';
-    final subtotal = orderData['totalAmount'] - 30;
+    final items = orderData['items'] as List<dynamic>? ?? [];
+    final subtotal = (orderData['totalAmount'] ?? 0.0) - 30;
     final deliveryCharge = 30.0;
     final totalAmount = orderData['totalAmount'] ?? 0.0;
     final note = orderData['note'] ?? 'No notes added';
-    final lat = orderData['latitude'];
-    final lng = orderData['longitude'];
+    final lat = (orderData['latitude'] ?? 27.700).toDouble();
+    final lng = (orderData['longitude'] ?? 85.300).toDouble();
     final LatLng latLng = LatLng(lat, lng);
 
     return Scaffold(
@@ -27,89 +26,104 @@ class OrderDetailsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            // Product Info Section
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              child: ListTile(
-                title: Text(productName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text("Quantity: $quantity"),
-                trailing: const Text("Pending", style: TextStyle(color: Colors.orange)),
-              ),
-            ),
-            const SizedBox(height: 20),
+            const Text("🛒 Products Ordered", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            ...items.map((item) {
+              final name = item['name'] ?? 'Product';
+              final qty = item['quantity'] ?? 1;
+              final price = item['price'] ?? 0.0;
+              final total = qty * price;
+              return ListTile(
+                title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                subtitle: Text("Qty: $qty x ₹$price"),
+                trailing: Text("₹${total.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.w600)),
+              );
+            }).toList(),
 
-            // Payment Breakdown
+            const Divider(),
             _buildPriceRow("Subtotal", subtotal),
             _buildPriceRow("Delivery Charge", deliveryCharge),
-            _buildPriceRow("Total Payment", totalAmount, bold: true),
+            _buildPriceRow("Total", totalAmount, bold: true),
 
             const SizedBox(height: 20),
-
-            // Order Note
-            const Text("Order Note:", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 5),
-            Text(note),
+            const Text("📝 Order Note", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 6),
+            Text(note, style: const TextStyle(color: Colors.black87)),
 
             const SizedBox(height: 20),
-
-            // Shipping Location
-            const Text("Shipping To:", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("📍 Shipping Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 10),
             SizedBox(
               height: 200,
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: latLng,
-                  zoom: 15,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: GoogleMap(
+                  initialCameraPosition: CameraPosition(target: latLng, zoom: 15),
+                  markers: {
+                    Marker(markerId: const MarkerId('deliveryLocation'), position: latLng),
+                  },
+                  zoomControlsEnabled: false,
+                  liteModeEnabled: true,
                 ),
-                markers: {
-                  Marker(
-                    markerId: const MarkerId('deliveryLocation'),
-                    position: latLng,
-                  ),
-                },
-                zoomControlsEnabled: false,
-                liteModeEnabled: true,
               ),
             ),
 
             const SizedBox(height: 30),
-
-            // Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text("Need Help!"),
-                        content: const Text("For assistance please contact our support at:\n📧 satendrakushwaha2021@gmail.com"),
-                        actions: [
-                          TextButton(
+            Align(
+              alignment: Alignment.center,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  side: BorderSide(color: Colors.green.shade700),
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (_) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.info, color: Colors.green, size: 36),
+                          const SizedBox(height: 10),
+                          const Text("Need Help!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "For any assistance please contact our support at:",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            "📧 satendrakushwaha2021@gmail.com",
+                            style: TextStyle(fontSize: 14),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text("Close"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                            ),
+                            child: const Text("Close", style: TextStyle(color: Colors.white)),
                           ),
                         ],
                       ),
-                    );
-                  },
-                  child: const Text("Need Help"),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () {
-                    // TODO: Implement cancel logic
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Order canceled (not implemented yet)")),
-                    );
-                  },
-                  child: const Text("Cancel Order"),
-                ),
-              ],
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.support_agent, color: Colors.green),
+                label: const Text("Need Help", style: TextStyle(color: Colors.green)),
+              ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -122,8 +136,8 @@ class OrderDetailsScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-          Text("₹${value.toStringAsFixed(2)}", style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
+          Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
+          Text("₹${value.toStringAsFixed(2)}", style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
         ],
       ),
     );

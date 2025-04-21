@@ -38,11 +38,11 @@ class AuthProvider with ChangeNotifier {
           'address': address,
           'phone': phone,
           'email': email,
-          'role': role,
+          'role': role.toLowerCase(), // 🔥 Store lowercase
           'createdAt': FieldValue.serverTimestamp(),
         };
 
-        if (role == 'Trader') {
+        if (role.toLowerCase() == 'trader') {
           userData['verified'] = false; // 👈 initially false
         }
 
@@ -53,7 +53,7 @@ class AuthProvider with ChangeNotifier {
         );
 
         // Navigate user based on role
-        if (role == 'Trader') {
+        if (role.toLowerCase() == 'trader') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => TraderHomeScreen()),
@@ -96,7 +96,7 @@ class AuthProvider with ChangeNotifier {
         await _firestore.collection('users').doc(user.uid).get();
 
         if (userDoc.exists) {
-          String role = userDoc.get('role') ?? '';
+          String role = (userDoc.get('role') ?? '').toString().toLowerCase(); // 🔥 force lowercase
 
           if (redirectData != null && redirectData['redirectTo'] != null) {
             Navigator.pushReplacementNamed(
@@ -105,8 +105,7 @@ class AuthProvider with ChangeNotifier {
               arguments: redirectData['arguments'],
             );
           } else {
-            if (role == 'Trader') {
-              // ✅ Allow only if verified
+            if (role == 'trader') {
               final isVerified = userDoc.data().toString().contains('verified')
                   ? userDoc['verified']
                   : false;
@@ -126,7 +125,7 @@ class AuthProvider with ChangeNotifier {
                 );
                 await _auth.signOut(); // ❌ Logout if not verified
               }
-            } else if (role == 'User') {
+            } else if (role == 'user') {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => NavigationMenu()),

@@ -29,16 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserName() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      try {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-        final data = doc.data();
-        if (data != null && data['fullName'] != null) {
-          setState(() {
-            _username = data['fullName'];
-          });
-        }
-      } catch (e) {
-        print('Error fetching user name: $e');
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
+      if (data != null && data['fullName'] != null) {
+        setState(() => _username = data['fullName']);
       }
     }
   }
@@ -51,10 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _launchEmail(String email) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: email,
-    );
+    final uri = Uri(scheme: 'mailto', path: email);
     if (!await launchUrl(uri)) {
       throw 'Could not launch email';
     }
@@ -120,9 +111,32 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
           ),
           Spacer(),
-          IconButton(
-            icon: Icon(Icons.notifications, color: Colors.white),
-            onPressed: () => Navigator.pushNamed(context, RoutesName.userNotificationScreen),
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications, color: Colors.white),
+                onPressed: () => Navigator.pushNamed(context, RoutesName.userNotificationScreen),
+              ),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('notifications')
+                    .where('to', isEqualTo: 'user')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final count = snapshot.data?.docs.length ?? 0;
+                  if (count == 0) return SizedBox();
+                  return Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: EdgeInsets.all(5),
+                      decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      child: Text('$count', style: TextStyle(color: Colors.white, fontSize: 13)),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           Stack(
             children: [
@@ -145,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     .snapshots()
                     : null,
                 builder: (context, snapshot) {
-                  int count = snapshot.data?.docs.length ?? 0;
+                  final count = snapshot.data?.docs.length ?? 0;
                   if (count == 0) return SizedBox();
                   return Positioned(
                     right: 6,
@@ -248,24 +262,18 @@ class _HomeScreenState extends State<HomeScreen> {
             final imageUrl = data['imageUrl']?.toString() ?? '';
 
             return GestureDetector(
-              onTap: () {
-                if (FirebaseAuth.instance.currentUser == null) {
-                  Navigator.pushNamed(context, RoutesName.loginScreen);
-                } else {
-                  Navigator.pushNamed(
-                    context,
-                    RoutesName.productDetailScreen,
-                    arguments: {
-                      'productId': doc.id,
-                      'productName': data['name'],
-                      'productImage': imageUrl,
-                      'productPrice': data['price'],
-                      'productQuantity': data['quantity'],
-                      'productDescription': data['description'],
-                    },
-                  );
-                }
-              },
+              onTap: () => Navigator.pushNamed(
+                context,
+                RoutesName.productDetailScreen,
+                arguments: {
+                  'productId': doc.id,
+                  'productName': data['name'],
+                  'productImage': imageUrl,
+                  'productPrice': data['price'],
+                  'productQuantity': data['quantity'],
+                  'productDescription': data['description'],
+                },
+              ),
               child: Card(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 4,
@@ -282,8 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return Image.asset('assets/agrivision_logo.png',
-                              height: 100, width: double.infinity, fit: BoxFit.cover);
+                          return Image.asset('assets/agrivision_logo.png', height: 100, fit: BoxFit.cover);
                         },
                       ),
                     ),
@@ -292,13 +299,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         children: [
                           Text(data['name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text('₹${data['price']} / ${data['quantity']}kg',
-                              style: TextStyle(color: Colors.green[700])),
+                          Text('₹${data['price']} / ${data['quantity']}kg', style: TextStyle(color: Colors.green[700])),
                           SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(5,
-                                    (i) => Icon(Icons.star, size: 16, color: Colors.orange[400])),
+                            children: List.generate(5, (i) => Icon(Icons.star, size: 16, color: Colors.orange[400])),
                           ),
                           SizedBox(height: 6),
                           ElevatedButton(
@@ -357,23 +362,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ListTile(
             leading: Icon(Icons.privacy_tip, color: Colors.green),
             title: Text('Privacy Policy'),
-            onTap: () {
-              Navigator.pushNamed(context, RoutesName.privacyPolicyScreen);
-            },
+            onTap: () => Navigator.pushNamed(context, RoutesName.privacyPolicyScreen),
           ),
           ListTile(
             leading: Icon(Icons.rule, color: Colors.green),
             title: Text('Terms and Conditions'),
-            onTap: () {
-              Navigator.pushNamed(context, RoutesName.termsAndConditionsScreen);
-            },
+            onTap: () => Navigator.pushNamed(context, RoutesName.termsAndConditionsScreen),
           ),
           ListTile(
             leading: Icon(Icons.contact_page, color: Colors.green),
             title: Text('Contact Us'),
-            onTap: () {
-              Navigator.pushNamed(context, RoutesName.contactUsScreen);
-            },
+            onTap: () => Navigator.pushNamed(context, RoutesName.contactUsScreen),
           ),
           ListTile(
             leading: Icon(Icons.logout, color: Colors.red),
@@ -382,28 +381,6 @@ class _HomeScreenState extends State<HomeScreen> {
               await FirebaseAuth.instance.signOut();
               Navigator.pushNamedAndRemoveUntil(context, RoutesName.loginScreen, (route) => false);
             },
-          ),
-          Divider(),
-          Padding(
-            padding: EdgeInsets.all(8),
-            child: Text('Join us on social media:'),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                icon: FaIcon(FontAwesomeIcons.facebook, color: Colors.blue),
-                onPressed: () => _launchURL("https://www.facebook.com/satendra.kushwaha.399826"),
-              ),
-              IconButton(
-                icon: FaIcon(FontAwesomeIcons.instagram, color: Colors.purple),
-                onPressed: () => _launchURL("https://www.instagram.com/iam_sattu_18"),
-              ),
-              IconButton(
-                icon: FaIcon(FontAwesomeIcons.envelope, color: Colors.green),
-                onPressed: () => _launchEmail("satendrakushwaha2021@gmail.com"),
-              ),
-            ],
           ),
         ],
       ),

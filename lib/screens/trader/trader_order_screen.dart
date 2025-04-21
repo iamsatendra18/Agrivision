@@ -11,13 +11,14 @@ class TraderOrderScreen extends StatefulWidget {
 
 class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> _statuses = ["All", "Pending", "Delivered", "Cancelled"];
-  final String traderId = FirebaseAuth.instance.currentUser?.uid ?? "";
+  final List<String> _statuses = ["All", "Pending", "Shipped", "Delivered", "Cancelled"];
+  String? traderId;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: _statuses.length, vsync: this);
+    traderId = FirebaseAuth.instance.currentUser?.uid;
   }
 
   @override
@@ -35,7 +36,9 @@ class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTicker
           indicatorColor: Colors.white,
         ),
       ),
-      body: TabBarView(
+      body: traderId == null
+          ? const Center(child: Text("\u26a0\ufe0f Trader not logged in"))
+          : TabBarView(
         controller: _tabController,
         children: _statuses.map((status) => _buildOrderList(status)).toList(),
       ),
@@ -46,47 +49,81 @@ class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTicker
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('orders').orderBy('timestamp', descending: true).snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-        if (snapshot.hasError) return _buildError("Error loading orders");
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-        final allOrders = snapshot.data?.docs ?? [];
+        if (snapshot.hasError) {
+          return const Center(child: Text("\u274c Error loading orders"));
+        }
 
-        final filteredOrders = allOrders.where((doc) {
-          final items = doc['items'] as List<dynamic>? ?? [];
-          final hasTraderItems = items.any((item) => item['traderId'] == traderId);
-          final status = doc['status']?.toString().toLowerCase() ?? '';
-          return hasTraderItems &&
-              (statusFilter == "All" || status == statusFilter.toLowerCase());
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("\ud83d\udccd No orders available."));
+        }
+
+        final traderOrders = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final items = data['items'] as List<dynamic>? ?? [];
+          final status = (data['status'] ?? "").toString().toLowerCase();
+          final matchesStatus = statusFilter == "All" || status == statusFilter.toLowerCase();
+          final containsTraderItem = items.any((item) => item['traderId'] == traderId);
+          return containsTraderItem && matchesStatus;
         }).toList();
 
-        if (filteredOrders.isEmpty) return _buildEmpty();
+        if (traderOrders.isEmpty) {
+          return const Center(child: Text("\ud83d\udccd No orders found for your products."));
+        }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: filteredOrders.length,
+          itemCount: traderOrders.length,
           itemBuilder: (context, index) {
-            final doc = filteredOrders[index];
-            final items = (doc['items'] as List<dynamic>).where((item) => item['traderId'] == traderId).toList();
-            final userId = doc['userId'];
+            final doc = traderOrders[index];
+            final data = doc.data() as Map<String, dynamic>;
+            final userId = data['userId'];
+            final filteredItems = (data['items'] as List<dynamic>)
+                .where((item) => item['traderId'] == traderId)
+                .toList();
 
             return FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
-              builder: (context, userSnapshot) {
-                if (!userSnapshot.hasData) return const SizedBox.shrink();
-                final user = userSnapshot.data!;
-                final userData = user.data() as Map<String, dynamic>? ?? {};
+              builder: (context, userSnap) {
+                final userData = userSnap.data?.data() as Map<String, dynamic>? ?? {};
+                final buyerName = userData['fullName'] ?? 'Unknown';
 
                 return Column(
-                  children: items.map((item) {
-                    return _buildOrderCard(
-                      productName: item['name'] ?? "Product",
-                      quantity: item['quantity'].toString(),
-                      price: item['price'].toString(),
-                      imageUrl: item['imageUrl'] ?? '',
-                      status: doc['status'] ?? "Pending",
-                      buyerName: userData['fullName'] ?? "Buyer",
-                      buyerPhone: userData['phone'] ?? "N/A",
-                      buyerEmail: userData['email'] ?? "",
+                  children: filteredItems.map((item) {
+                    return Card(
+                      margin: const EdgeInsets.all(10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty
+                            ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            item['imageUrl'],
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                          ),
+                        )
+                            : const Icon(Icons.image_not_supported),
+                        title: Text(item['name'] ?? 'Unnamed Product'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Qty: ${item['quantity']} | Price: \u20b9${item['price']}"),
+                            Text("Buyer: $buyerName"),
+                            Text(
+                              "Status: ${data['status']}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: _getStatusColor(data['status']),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   }).toList(),
                 );
@@ -98,78 +135,15 @@ class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTicker
     );
   }
 
-  Widget _buildOrderCard({
-    required String productName,
-    required String quantity,
-    required String price,
-    required String imageUrl,
-    required String status,
-    required String buyerName,
-    required String buyerPhone,
-    required String buyerEmail,
-  }) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      elevation: 4,
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: imageUrl.isNotEmpty
-              ? Image.network(imageUrl, width: 55, height: 55, fit: BoxFit.cover)
-              : Container(
-            width: 55,
-            height: 55,
-            color: Colors.grey[300],
-            child: const Icon(Icons.image_not_supported),
-          ),
-        ),
-        title: Text(productName, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Quantity: $quantity"),
-            Text("Price: ₹$price"),
-            const SizedBox(height: 6),
-            Text("Buyer: $buyerName"),
-            Text("Phone: $buyerPhone"),
-            Text("Email: $buyerEmail"),
-            const SizedBox(height: 6),
-            Text(
-              "Status: $status",
-              style: TextStyle(fontWeight: FontWeight.bold, color: _getStatusColor(status)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.inbox, size: 80, color: Colors.grey),
-          SizedBox(height: 10),
-          Text("No orders found", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildError(String message) {
-    return Center(child: Text(message, style: const TextStyle(color: Colors.red)));
-  }
-
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case "pending":
+      case 'pending':
         return Colors.orange;
-      case "delivered":
+      case 'shipped':
+        return Colors.blue;
+      case 'delivered':
         return Colors.green;
-      case "cancelled":
+      case 'cancelled':
         return Colors.red;
       default:
         return Colors.grey;

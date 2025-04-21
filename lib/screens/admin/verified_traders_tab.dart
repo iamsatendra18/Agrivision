@@ -13,12 +13,6 @@ class _VerifiedTradersTabState extends State<VerifiedTradersTab> {
   bool showVerified = false;
 
   @override
-  void initState() {
-    super.initState();
-    print('Logged-in Admin UID: ${FirebaseAuth.instance.currentUser?.uid}');
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -63,7 +57,7 @@ class _VerifiedTradersTabState extends State<VerifiedTradersTab> {
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: usersRef
-                  .where('role', isEqualTo: 'Trader')
+                  .where('role', isEqualTo: 'trader')
                   .where('verified', isEqualTo: showVerified)
                   .snapshots(),
               builder: (context, snapshot) {
@@ -102,7 +96,7 @@ class _VerifiedTradersTabState extends State<VerifiedTradersTab> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (!isVerified)
+                            if (!isVerified && !showVerified)
                               ElevatedButton(
                                 onPressed: () async {
                                   try {
@@ -110,9 +104,8 @@ class _VerifiedTradersTabState extends State<VerifiedTradersTab> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('$name has been approved.')),
                                     );
-                                    setState(() {});
                                   } catch (e) {
-                                    print('🔥 Error approving trader: ${e.toString()}');
+                                    print('Error approving trader: ${e.toString()}');
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Error: ${e.toString()}')),
                                     );
@@ -123,7 +116,7 @@ class _VerifiedTradersTabState extends State<VerifiedTradersTab> {
                                 ),
                                 child: Text('Approve'),
                               )
-                            else
+                            else if (isVerified && showVerified)
                               IconButton(
                                 icon: Icon(Icons.close, color: Colors.red),
                                 onPressed: () async {
@@ -132,9 +125,8 @@ class _VerifiedTradersTabState extends State<VerifiedTradersTab> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('$name has been unverified.')),
                                     );
-                                    setState(() {});
                                   } catch (e) {
-                                    print('🔥 Error unapproving trader: ${e.toString()}');
+                                    print('Error unapproving trader: ${e.toString()}');
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Error: ${e.toString()}')),
                                     );
@@ -180,7 +172,6 @@ class _VerifiedTradersTabState extends State<VerifiedTradersTab> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('$name has been deleted.')),
               );
-              setState(() {});
             },
             child: Text('Delete'),
           ),

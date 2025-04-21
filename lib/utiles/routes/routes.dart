@@ -26,13 +26,12 @@ import '../../screens/trader/trader_order_screen.dart';
 import '../../screens/trader/trader_payment_screen.dart';
 import '../../screens/trader/trader_privacy_policy_screen.dart';
 import '../../screens/trader/trader_profile_page.dart';
-import '../../screens/trader/trader_service_screen.dart';
+import '../../screens/trader/trader_anudan_screen.dart';
 import '../../screens/user/checkout_details_screen.dart';
 import '../../screens/user/contact_us_screen.dart';
 import '../../screens/user/location_picker_screen.dart';
 import '../../screens/user/order_details_screen.dart';
 import '../../screens/user/order_map_summary_screen.dart';
-import '../../screens/user/payments/esewa_payment_screen.dart';
 import '../../screens/user/privacy_policy_screen.dart';
 import '../../screens/user/terms_and_conditions_screen.dart';
 import '../../screens/user/user_notification_screen.dart';
@@ -44,7 +43,7 @@ import 'package:agrivision/screens/admin/order_history_tab.dart';
 import 'package:agrivision/screens/admin/notifications_tab.dart';
 import 'package:agrivision/screens/admin/payments_tab.dart';
 import 'package:agrivision/screens/admin/analytics_tab.dart';
-import 'package:agrivision/screens/admin/users_management_tab.dart';
+import 'package:agrivision/screens/admin/anudan_messages_tab.dart';
 
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -72,8 +71,8 @@ class Routes {
         return MaterialPageRoute(builder: (_) => TraderProfilePage());
       case RoutesName.cartBasketScreen:
         return MaterialPageRoute(builder: (_) => CartBasketScreen());
-      case RoutesName.traderServiceScreen:
-        return MaterialPageRoute(builder: (_) => TraderServiceScreen());
+      case RoutesName.traderAnudanScreen:
+        return MaterialPageRoute(builder: (_) => TraderAnudanScreen());
       case RoutesName.traderClimateGuidenessScreen:
         return MaterialPageRoute(builder: (_) => TraderClimateGuidencessScreen());
       case RoutesName.traderPaymentScreen:
@@ -112,13 +111,13 @@ class Routes {
       case RoutesName.orderHistoryTab:
         return MaterialPageRoute(builder: (_) => OrderHistoryTab());
       case RoutesName.notificationsTab:
-        return MaterialPageRoute(builder: (_) => NotificationsTab());
+        return MaterialPageRoute(builder: (_) => AdminNotificationTab());
       case RoutesName.paymentsTab:
         return MaterialPageRoute(builder: (_) => PaymentsTab());
       case RoutesName.analyticsTab:
         return MaterialPageRoute(builder: (_) => AnalyticsTab());
-      case RoutesName.usersManagementTab:
-        return MaterialPageRoute(builder: (_) => UsersManagementTab());
+      case RoutesName.anudanMessagesTab:
+        return MaterialPageRoute(builder: (_) => AnudanMessagesTab());
       case RoutesName.climateGuidenessTab:
         return MaterialPageRoute(builder: (_) => ClimateGuidenessTab());
       case RoutesName.cropRecommendationTab:
@@ -137,13 +136,6 @@ class Routes {
         return MaterialPageRoute(builder: (_) => TermsAndConditionsScreen());
       case RoutesName.tradertermsAndConditionsScreen:
         return MaterialPageRoute(builder: (_) => TraderTermsAndConditionsScreen());
-      case RoutesName.esewaPaymentScreen:
-        final args = settings.arguments as Map<String, dynamic>;
-        return MaterialPageRoute(
-          builder: (_) => EsewaPaymentScreen(
-            totalAmount: args['totalAmount'] ?? 0.0,
-          ),
-        );
       case RoutesName.orderDetailsScreen:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
@@ -155,6 +147,9 @@ class Routes {
           builder: (_) => CheckoutDetailsScreen(
             totalAmount: args['totalAmount'] ?? 0.0,
             itemCount: args['itemCount'] ?? 0,
+            cartItems: List<Map<String, dynamic>>.from(args['cartItems'] ?? []),
+            latitude: args['latitude'] ?? 0.0,
+            longitude: args['longitude'] ?? 0.0,
           ),
         );
       case RoutesName.locationPickerScreen:

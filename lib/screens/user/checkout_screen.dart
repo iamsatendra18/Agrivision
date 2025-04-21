@@ -1,8 +1,11 @@
+import 'package:esewa_flutter_sdk/esewa_config.dart';
+import 'package:esewa_flutter_sdk/esewa_flutter_sdk.dart';
+import 'package:esewa_flutter_sdk/esewa_payment.dart';
+import 'package:esewa_flutter_sdk/esewa_payment_success_result.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agrivision/utiles/routes/routes_name.dart';
-import 'package:agrivision/screens/user/payments/esewa_payment_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -12,6 +15,8 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
+  final String _clientId = "JB0BBQ4aD0UqIThFJwAKBgAXEUkEGQUBBAwdOgABHD4DChwUAB0R";
+  final String _secretKey = "BhwIWQQADhIYSxILExMcAgFXFhcOBwAKBgAXEQ==";
   int totalItems = 0;
   double totalAmount = 0.0;
   bool isLoading = true;
@@ -52,22 +57,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _openPaymentScreen() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EsewaPaymentScreen(
-          totalAmount: totalAmount,
-        ),
-      ),
-    );
 
-    if (!context.mounted) return;
+    try {
+      EsewaFlutterSdk.initPayment(
+        esewaConfig: EsewaConfig(
+            clientId: _clientId,
+            secretId: _secretKey,
+            environment: Environment.test),
+        onPaymentSuccess: (EsewaPaymentSuccessResult data) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Payment Successful!}")),
+          );
+        },
+        onPaymentFailure: ( data) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Payment Failed: ${data.message}")),
+          );
+        },
+        onPaymentCancellation: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Payment Cancelled")),
+          );
+        },
+        esewaPayment: EsewaPayment(
+            productId: "ORDER_${DateTime.now().millisecondsSinceEpoch}",
+            productName: 'Test Product',
+            productPrice: totalAmount.toString(),
+            callbackUrl: 'https://yourdomain.com/callback'),
+      );
 
-    if (result == true) {
-      _confirmAndPay();
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("⚠️ Payment was cancelled or failed.")),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }
@@ -92,17 +113,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'price': data['price'],
           'quantity': data['quantity'],
           'imageUrl': data['imageUrl'],
+          'productId': data['productId'],
+          'category': data['category'] ?? '',
+          'createdBy': data['createdBy'] ?? '',
         });
       }
 
+      // ✅ Place order to Firestore
       await FirebaseFirestore.instance.collection('orders').add({
         'userId': user.uid,
         'items': items,
         'totalAmount': totalAmount,
         'paymentMethod': 'eSewa',
         'deliveryAddress': 'Village Road, Agri Farm, Nepal',
+        'note': '', // future use
+        'latitude': 27.7000, // static for now
+        'longitude': 85.3000, // static for now
         'status': 'Pending',
-        'timestamp': FieldValue.serverTimestamp(),
+        'timestamp': FieldValue.serverTimestamp(), // 🔥 this was missing
       });
 
       for (var doc in cartItems.docs) {
@@ -204,7 +232,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(height: 20),
                 const CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage('assets/agricultures_logo.png'),
+                  backgroundImage: AssetImage('assets/agrivision_logo.png'),
                   backgroundColor: Colors.white,
                 ),
                 const SizedBox(height: 20),

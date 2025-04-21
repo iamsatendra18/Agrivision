@@ -10,7 +10,7 @@ class RoutesName {
   static const String cartBasketScreen = 'cart_basket_screen';
   static const String homePage = 'home_page';
   static const String traderProfilePage = 'trader_profile_page';
-  static const String traderServiceScreen = 'trader_service_screen';
+  static const String traderAnudanScreen = 'trader_anudan_screen';
   static const String traderClimateGuidenessScreen = 'trader_climate_guideness_screen';
   static const String traderOrderScreen = 'trader_order_screen';
   static const String traderPaymentScreen = 'trader_payment_screen';
@@ -20,7 +20,7 @@ class RoutesName {
   static const String traderNotificationScreen = 'trader_notification_screen';
   static const String userNotificationScreen = 'user_notification_screen';
   static const String traderProductListScreen = 'trader_product_list_screen';
-  static const String reviewScreen = 'review_screen'; // 👈 Add this
+  static const String reviewScreen = 'review_screen';
   static const String adminLoginScreen = 'admin_login_screen';
   static const String adminDashboardScreen = 'admin_dashboard_screen';
 
@@ -30,7 +30,7 @@ class RoutesName {
   static const String notificationsTab = 'notifications';
   static const String paymentsTab = 'payments';
   static const String analyticsTab = 'analytics';
-  static const String usersManagementTab = 'users_management';
+  static const String anudanMessagesTab = 'anudan_messages';
   static const String climateGuidenessTab = 'climate_guideness_tab';
   static const String cropRecommendationTab = 'crop_recommendation_tab';
   static const String traderCropRecommendationScreen = 'trader_crop_recommendation_screen';

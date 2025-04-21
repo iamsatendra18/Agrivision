@@ -1,4 +1,4 @@
-import 'package:agrivision/screens/user/cart_screen.dart';
+import 'package:agrivision/screens/user/OrderHistoryScreen.dart';
 import 'package:agrivision/screens/user/home_screen.dart';
 import 'package:agrivision/screens/user/user_profile_screen.dart';
 import 'package:flutter/cupertino.dart';
@@ -12,7 +12,7 @@ class NavigationProvider extends ChangeNotifier {
   final List<Widget> _screens = [
     HomeScreen(),
     CheckoutScreen(),
-    CartScreen(),
+    OrderHistoryScreen(),
     UserProfileScreen(),
     // HomeScreen(),
     // TraderHomeScreen(), // Add Trader Home Screen

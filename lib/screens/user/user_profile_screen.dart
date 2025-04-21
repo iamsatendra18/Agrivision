@@ -12,12 +12,15 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   bool isEditing = false;
+
   final TextEditingController nameController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController imageController = TextEditingController();
 
   final uid = FirebaseAuth.instance.currentUser?.uid;
+  String imageUrl = '';
 
   @override
   void initState() {
@@ -34,7 +37,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         addressController.text = data['address'] ?? '';
         phoneController.text = data['phone'] ?? '';
         emailController.text = data['email'] ?? '';
-        setState(() {}); // To rebuild with latest values
+        imageController.text = data['imageUrl'] ?? '';
+        setState(() {
+          imageUrl = data['imageUrl'] ?? '';
+        });
       }
     }
   }
@@ -45,13 +51,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         'fullName': nameController.text.trim(),
         'address': addressController.text.trim(),
         'phone': phoneController.text.trim(),
+        'imageUrl': imageController.text.trim(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile updated successfully!')),
+        SnackBar(content: Text('✅ Profile updated successfully!')),
       );
 
       setState(() {
+        imageUrl = imageController.text.trim();
         isEditing = false;
       });
     }
@@ -67,9 +75,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
-  void logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.pushNamedAndRemoveUntil(context, RoutesName.loginScreen, (route) => false);
+  bool _isValidImageUrl(String url) {
+    return (Uri.tryParse(url)?.hasAbsolutePath == true &&
+        (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.webp')))
+        || url.startsWith('assets/');
   }
 
   Widget buildTextField(String label, TextEditingController controller, {bool readOnly = false}) {
@@ -80,12 +89,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(Icons.edit, color: isEditing ? Color(0xFF2E7D32) : Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
         filled: true,
         fillColor: Color(0xFFE8F5E9),
       ),
+    );
+  }
+
+  Widget buildImagePreview() {
+    if (imageUrl.isEmpty || !_isValidImageUrl(imageUrl)) {
+      return const CircleAvatar(
+        radius: 50,
+        backgroundImage: AssetImage('assets/agrivision_logo.png'),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 50,
+      backgroundImage: imageUrl.startsWith('assets/')
+          ? AssetImage(imageUrl) as ImageProvider
+          : NetworkImage(imageUrl),
     );
   }
 
@@ -105,17 +128,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Profile Avatar Section
+              // Profile Avatar
               Center(
                 child: Column(
                   children: [
                     CircleAvatar(
                       radius: 55,
                       backgroundColor: Color(0xFF2E7D32),
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundImage: AssetImage('assets/agrivision_logo.png'),
-                      ),
+                      child: buildImagePreview(),
                     ),
                     SizedBox(height: 12),
                     Text(
@@ -131,7 +151,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
               SizedBox(height: 20),
 
-              // Editable Fields
               buildTextField('Full Name', nameController),
               SizedBox(height: 12),
               buildTextField('Address', addressController),
@@ -139,10 +158,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               buildTextField('Phone Number', phoneController),
               SizedBox(height: 12),
               buildTextField('Email', emailController, readOnly: true),
+              SizedBox(height: 12),
+              buildTextField('Image URL or Asset Path', imageController),
 
               SizedBox(height: 20),
 
-              // Edit / Save Button
+              // Save Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -154,16 +175,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     backgroundColor: Color(0xFF1B5E20),
                   ),
                 ),
               ),
-
-              SizedBox(height: 16),
-              
             ],
           ),
         ),

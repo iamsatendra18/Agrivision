@@ -176,64 +176,7 @@ class _TraderContactUsScreenState extends State<TraderContactUsScreen> {
             Text("🕒 Monday - Sunday: 7:00 AM - 6:00 PM"),
             SizedBox(height: 30),
 
-            Text("Send us a message", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Enter your name' : null,
-                    decoration: InputDecoration(
-                      hintText: 'Your Name',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  TextFormField(
-                    controller: _messageController,
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Enter your message' : null,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: 'Your Message',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  icon: Icon(Icons.preview),
-                  label: Text("View Response"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  ),
-                  onPressed: _viewResponse, // ✅ Updated
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.send),
-                  label: Text("Send Message"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[700],
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  ),
-                  onPressed: _sendMessageToFirestore,
-                ),
-              ],
-            ),
             SizedBox(height: 50),
             Center(
               child: Padding(

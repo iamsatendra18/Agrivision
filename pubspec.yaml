@@ -57,8 +57,18 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/agricultures_logo.png
     - assets/background.jpg
     - assets/agrivision_logo.png
+    - assets/Arbind.jpg
+    - assets/dev.jpg
+    - assets/nandlal.jpg
+    - assets/pradip.jpg
+    - assets/prince.jpg
+    - assets/raju.jpg
+    - assets/rajalal.jpg
+    - assets/rakesh.jpg
+    - assets/shailendra.jpg
     - assets/apple.jpg
     - assets/banana.jpg
     - assets/spinach.jpg
@@ -88,3 +98,4 @@ flutter:
     - assets/milk.jpg
     - assets/orange.jpg
     - assets/pineapple.jpg
+

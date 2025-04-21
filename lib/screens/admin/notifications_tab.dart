@@ -1,86 +1,129 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
-class NotificationsTab extends StatefulWidget {
-  const NotificationsTab({super.key});
+class AdminNotificationTab extends StatefulWidget {
+  const AdminNotificationTab({Key? key}) : super(key: key);
 
   @override
-  State<NotificationsTab> createState() => _NotificationsTabState();
+  State<AdminNotificationTab> createState() => _AdminNotificationTabState();
 }
 
-class _NotificationsTabState extends State<NotificationsTab> {
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController messageController = TextEditingController();
-  String selectedRole = 'trader';
+class _AdminNotificationTabState extends State<AdminNotificationTab> {
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  String _selectedRole = 'user';
+  bool _isSending = false;
 
-  void _sendNotification(BuildContext context) async {
-    String title = titleController.text.trim();
-    String message = messageController.text.trim();
+  Future<void> _sendNotification() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    if (title.isEmpty || message.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("⚠️ Title and message cannot be empty!")),
-      );
-      return;
-    }
+    setState(() => _isSending = true);
 
     try {
       await FirebaseFirestore.instance.collection('notifications').add({
-        'title': title,
-        'message': message,
-        'timestamp': FieldValue.serverTimestamp(),
-        'to': selectedRole,
+        'title': _titleController.text.trim(),
+        'message': _messageController.text.trim(),
+        'to': _selectedRole.toLowerCase(),
+        'timestamp': Timestamp.now(),
       });
 
-      titleController.clear();
-      messageController.clear();
+      _titleController.clear();
+      _messageController.clear();
+      setState(() => _selectedRole = 'user');
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ Sent to $selectedRole!")),
+        const SnackBar(content: Text("✅ Notification sent successfully")),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("❌ Failed to send: $e")),
       );
     }
+
+    setState(() => _isSending = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Push Notifications'), backgroundColor: Colors.green),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            DropdownButtonFormField<String>(
-              value: selectedRole,
-              items: const [
-                DropdownMenuItem(value: 'trader', child: Text('Trader')),
-                DropdownMenuItem(value: 'user', child: Text('User')),
-              ],
-              onChanged: (val) => setState(() => selectedRole = val!),
-              decoration: InputDecoration(labelText: 'Send To', border: OutlineInputBorder()),
+      appBar: AppBar(
+        title: const Text("Send Notification"),
+        backgroundColor: Colors.green,
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWideScreen = constraints.maxWidth > 600;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isWideScreen ? 500 : double.infinity,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Title',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => value == null || value.trim().isEmpty
+                            ? 'Enter a title'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _messageController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Message',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => value == null || value.trim().isEmpty
+                            ? 'Enter a message'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _selectedRole,
+                        decoration: const InputDecoration(
+                          labelText: 'Select Role',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'user', child: Text('User')),
+                          DropdownMenuItem(value: 'trader', child: Text('Trader')),
+                        ],
+                        onChanged: (value) {
+                          setState(() => _selectedRole = value!);
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      _isSending
+                          ? const CircularProgressIndicator()
+                          : ElevatedButton.icon(
+                        icon: const Icon(Icons.send),
+                        label: const Text("Send Notification"),
+                        onPressed: _sendNotification,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 24,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: titleController,
-              decoration: InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: messageController,
-              maxLines: 4,
-              decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _sendNotification(context),
-              child: const Text("Send Notification"),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

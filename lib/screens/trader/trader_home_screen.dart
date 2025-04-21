@@ -8,15 +8,12 @@ import 'package:agrivision/screens/trader/trader_payment_screen.dart';
 import 'package:agrivision/screens/trader/trader_privacy_policy_screen.dart';
 import 'package:agrivision/screens/trader/trader_product_list_screen.dart';
 import 'package:agrivision/screens/trader/trader_profile_page.dart';
-import 'package:agrivision/screens/trader/trader_service_screen.dart';
+import 'package:agrivision/screens/trader/trader_anudan_screen.dart';
 import 'package:agrivision/screens/trader/trader_terms_and_conditions_screen.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../utiles/routes/routes_name.dart';
-
-
 
 class TraderHomeScreen extends StatefulWidget {
   @override
@@ -46,9 +43,12 @@ class _TraderHomeScreenState extends State<TraderHomeScreen> {
               stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
               builder: (context, snapshot) {
                 String traderName = "Trader";
+                String imageUrl = '';
+
                 if (snapshot.hasData && snapshot.data!.exists) {
                   final data = snapshot.data!.data() as Map<String, dynamic>;
                   traderName = data['fullName'] ?? 'Trader';
+                  imageUrl = data['imageUrl'] ?? '';
                 }
 
                 return DrawerHeader(
@@ -68,16 +68,52 @@ class _TraderHomeScreenState extends State<TraderHomeScreen> {
                             },
                             child: CircleAvatar(
                               radius: 40,
-                              backgroundImage: AssetImage('assets/profile_picture.jpg'),
+                              backgroundImage: imageUrl.isNotEmpty
+                                  ? imageUrl.startsWith('assets/')
+                                  ? AssetImage(imageUrl) as ImageProvider
+                                  : NetworkImage(imageUrl)
+                                  : AssetImage('assets/profile_picture.jpg'),
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.notifications, color: Colors.white),
-                            onPressed: () {
-                              Navigator.push(context,
-                                  MaterialPageRoute(builder: (context) => TraderNotificationScreen()));
+                          StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('notifications')
+                                .where('to', isEqualTo: 'trader')
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              final count = snapshot.data?.docs.length ?? 0;
+                              return Stack(
+                                alignment: Alignment.topRight,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.notifications, color: Colors.white),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => TraderNotificationScreen()),
+                                      );
+                                    },
+                                  ),
+                                  if (count > 0)
+                                    Positioned(
+                                      right: 6,
+                                      top: 6,
+                                      child: Container(
+                                        padding: EdgeInsets.all(5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          '$count',
+                                          style: TextStyle(color: Colors.white, fontSize: 10),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
                             },
-                          ),
+                          )
                         ],
                       ),
                       SizedBox(height: 10),
@@ -95,9 +131,9 @@ class _TraderHomeScreenState extends State<TraderHomeScreen> {
             ),
 
             ListTile(
-              leading: Icon(Icons.build),
-              title: Text('Service'),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderServiceScreen())),
+              leading: Icon(Icons.volunteer_activism),
+              title: Text('Anudan'),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderAnudanScreen())),
             ),
             ListTile(
               leading: Icon(Icons.agriculture),
@@ -133,7 +169,8 @@ class _TraderHomeScreenState extends State<TraderHomeScreen> {
               leading: Icon(Icons.contact_mail),
               title: Text('Contact Us'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderContactUsScreen())),
-            ),ListTile(
+            ),
+            ListTile(
               leading: Icon(Icons.contact_mail),
               title: Text('Privacy Policy'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderPrivacyPolicyScreen())),

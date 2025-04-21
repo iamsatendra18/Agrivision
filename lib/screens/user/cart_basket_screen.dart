@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:agrivision/utiles/routes/routes_name.dart'; // ✅ Import for routes
+import 'package:agrivision/utiles/routes/routes_name.dart';
 
 class CartBasketScreen extends StatefulWidget {
   const CartBasketScreen({super.key});
@@ -80,6 +80,8 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
       );
     }
 
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cart Basket'),
@@ -96,155 +98,191 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-          final cartItems = snapshot.data!.docs;
+          final cartDocs = snapshot.data!.docs;
 
-          if (cartItems.isEmpty) {
+          if (cartDocs.isEmpty) {
             return const Center(child: Text("🛒 Your cart is empty"));
           }
 
-          double total = cartItems.fold(0, (sum, doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return sum + (data['price'] * data['quantity']);
-          });
+          final cartItems = cartDocs.map((doc) {
+            final item = doc.data() as Map<String, dynamic>;
+            final price = item['price'] ?? 0;
+            final quantity = item['quantity'] ?? 1;
+            return {
+              'name': item['name'] ?? '',
+              'price': price,
+              'quantity': quantity,
+              'total': price * quantity,
+              'image': item['imageUrl'] ?? '',
+              'imageUrl': item['imageUrl'] ?? '',
+              'traderId': item['traderId'] ?? '',
+            };
+          }).toList();
 
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.green[100]!, Colors.green[300]!],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: cartItems.length,
-                      itemBuilder: (context, index) {
-                        final item = cartItems[index].data() as Map<String, dynamic>;
-                        final doc = cartItems[index];
-                        final imageUrl = item['imageUrl']?.toString() ?? '';
+          double total = cartItems.fold(0, (sum, item) => sum + item['total']);
 
-                        ImageProvider imageProvider;
-                        if (imageUrl.startsWith('assets/')) {
-                          imageProvider = AssetImage(imageUrl);
-                        } else if (imageUrl.isNotEmpty) {
-                          imageProvider = NetworkImage(imageUrl);
-                        } else {
-                          imageProvider = const AssetImage('assets/agrivision_logo.png');
-                        }
-
-                        return Card(
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundImage: imageProvider,
-                              radius: 25,
-                            ),
-                            title: Text(item["name"],
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                            subtitle: Text(
-                              "₹${item["price"]} x ${item["quantity"]} = ₹${item["price"] * item["quantity"]}",
-                              style: const TextStyle(fontSize: 16, color: Colors.black54),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                                  onPressed: () => decreaseQuantity(doc),
-                                ),
-                                Text(item["quantity"].toString(),
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-                                  onPressed: () => increaseQuantity(doc),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => confirmDeleteItem(doc),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.green[100]!, Colors.green[300]!],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: cartDocs.length,
+                          itemBuilder: (context, index) {
+                            final item = cartDocs[index].data() as Map<String, dynamic>;
+                            final doc = cartDocs[index];
+                            final imageUrl = item['imageUrl']?.toString() ?? '';
 
-                  const SizedBox(height: 10),
-                  Text(
-                    '💰 Total Amount',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown[700],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
+                            ImageProvider imageProvider;
+                            if (imageUrl.startsWith('assets/')) {
+                              imageProvider = AssetImage(imageUrl);
+                            } else if (imageUrl.isNotEmpty) {
+                              imageProvider = NetworkImage(imageUrl);
+                            } else {
+                              imageProvider = const AssetImage('assets/agrivision_logo.png');
+                            }
 
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.green[200],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Total: ₹${total.toStringAsFixed(2)}",
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pushNamed(
-                              context,
-                              RoutesName.checkoutDetailsScreen,
-                              arguments: {
-                                'totalAmount': total,
-                                'itemCount': cartItems.length,
-                              },
+                            return Card(
+                              elevation: 4,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage: imageProvider,
+                                  radius: screenWidth * 0.06,
+                                ),
+                                title: Text(
+                                  item["name"] ?? '',
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.045,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  "₹${item["price"] ?? 0} x ${item["quantity"] ?? 1} = ₹${(item["price"] ?? 0) * (item["quantity"] ?? 1)}",
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.04,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                      onPressed: () => decreaseQuantity(doc),
+                                    ),
+                                    Text(
+                                      item["quantity"].toString(),
+                                      style: TextStyle(
+                                        fontSize: screenWidth * 0.045,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+                                      onPressed: () => increaseQuantity(doc),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => confirmDeleteItem(doc),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             );
                           },
-                          icon: const Icon(Icons.shopping_cart_checkout, color: Colors.white),
-                          label: const Text('Proceed'),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '💰 Total Amount',
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.06,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.brown[700],
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.green[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Total: ₹${total.toStringAsFixed(2)}",
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.05,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  RoutesName.checkoutDetailsScreen,
+                                  arguments: {
+                                    'totalAmount': total,
+                                    'itemCount': cartItems.length,
+                                    'cartItems': cartItems,
+                                    'latitude': 27.700,
+                                    'longitude': 85.333,
+                                  },
+                                );
+                              },
+                              icon: const Icon(Icons.shopping_cart_checkout, color: Colors.white),
+                              label: const Text('Proceed'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green[700],
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.05,
+                                  vertical: screenWidth * 0.025,
+                                ),
+                                textStyle: TextStyle(fontSize: screenWidth * 0.045),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: saveCart,
+                          icon: const Icon(Icons.save, color: Colors.white),
+                          label: const Text('Save Cart'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green[700],
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            textStyle: const TextStyle(fontSize: 18),
+                            padding: EdgeInsets.symmetric(vertical: screenWidth * 0.035),
+                            textStyle: TextStyle(fontSize: screenWidth * 0.045),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: saveCart,
-                      icon: const Icon(Icons.save, color: Colors.white),
-                      label: const Text('Save Cart'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green[700],
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        textStyle: const TextStyle(fontSize: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
       ),

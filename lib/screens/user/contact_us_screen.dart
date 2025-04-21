@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../admin/view_response_screen.dart';
 
-
 class ContactUsScreen extends StatefulWidget {
   @override
   State<ContactUsScreen> createState() => _ContactUsScreenState();
@@ -40,7 +39,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   }
 
   void _launchMaps() async {
-    final Uri mapUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=India");
+    final Uri mapUri = Uri.parse("https://www.google.com/maps/place/The+British+College,+Kathmandu/@27.6924364,85.3198468,18.46z/data=!4m9!1m2!2m1!1zLA!3m5!1s0x39eb19b19295555f:0xabfe5f4b310f97de!8m2!3d27.6921341!4d85.3195183!16s%2Fg%2F11bw8f8gc4?entry=ttu&g_ep=EgoyMDI1MDQxNi4xIKXMDSoJLDEwMjExNjM5SAFQAw%3D%3D");
     launchUrl(mapUri);
   }
 
@@ -141,78 +140,9 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             Text("Office Hours", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 6),
             Text("🕒 Monday - Sunday: 7:00 AM - 6:00 PM"),
-            SizedBox(height: 30),
-
-            Text("Send us a message", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    validator: (val) =>
-                    val == null || val.trim().isEmpty ? 'Please enter your name' : null,
-                    decoration: InputDecoration(
-                      hintText: 'Your Name',
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  TextFormField(
-                    controller: _messageController,
-                    validator: (val) =>
-                    val == null || val.trim().isEmpty ? 'Please enter your message' : null,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: 'Your Message',
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 20),
-
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _viewResponse,
-                    icon: Icon(Icons.visibility),
-                    label: Text("View Response"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade700,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _submitMessage,
-                    icon: Icon(Icons.send),
-                    label: Text("Send Message"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF43A047),
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
             SizedBox(height: 50),
+
+            SizedBox(height: 150), // Increased the space before the copyright text
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 10),

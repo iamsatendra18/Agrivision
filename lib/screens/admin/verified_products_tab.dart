@@ -6,8 +6,7 @@ class VerifiedProductsTab extends StatefulWidget {
   State<VerifiedProductsTab> createState() => _VerifiedProductsTabState();
 }
 
-class _VerifiedProductsTabState extends State<VerifiedProductsTab>
-    with SingleTickerProviderStateMixin {
+class _VerifiedProductsTabState extends State<VerifiedProductsTab> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String? selectedTraderId;
 
@@ -65,15 +64,13 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab>
             final data = doc.data() as Map<String, dynamic>;
 
             return FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(data['createdBy'])
-                  .get(),
+              future: FirebaseFirestore.instance.collection('users').doc(data['createdBy']).get(),
               builder: (context, traderSnapshot) {
                 String traderInfo = "👤 Unknown Trader";
                 if (traderSnapshot.hasData && traderSnapshot.data!.exists) {
                   final trader = traderSnapshot.data!.data() as Map<String, dynamic>;
-                  if (trader['role'] == 'Trader') {
+                  final role = trader['role']?.toString().toLowerCase();
+                  if (role == 'trader') {
                     traderInfo = '''
 👤 ${trader['fullName'] ?? 'N/A'}
 📞 ${trader['phone'] ?? 'N/A'}
@@ -84,14 +81,11 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab>
                 }
 
                 final imageUrl = data['imageUrl']?.toString() ?? '';
-                final isValidNetworkImage = imageUrl.startsWith('http');
 
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                   elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Row(
@@ -99,8 +93,8 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab>
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: isValidNetworkImage
-                              ? Image.network(
+                          child: imageUrl.startsWith('assets/')
+                              ? Image.asset(
                             imageUrl,
                             height: 80,
                             width: 80,
@@ -112,18 +106,17 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab>
                               child: Icon(Icons.broken_image),
                             ),
                           )
-                              : imageUrl.contains("assets/")
-                              ? Image.asset(
+                              : Image.network(
                             imageUrl,
                             height: 80,
                             width: 80,
                             fit: BoxFit.cover,
-                          )
-                              : Image.asset(
-                            'assets/agrivision_logo.png',
-                            height: 80,
-                            width: 80,
-                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 80,
+                              width: 80,
+                              color: Colors.grey[300],
+                              child: Icon(Icons.broken_image),
+                            ),
                           ),
                         ),
                         SizedBox(width: 12),
@@ -131,16 +124,11 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(data['name'] ?? 'Unnamed Product',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text(data['name'] ?? 'Unnamed Product', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               SizedBox(height: 4),
-                              Text(data['description'] ?? '',
-                                  style: TextStyle(color: Colors.grey[700]),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis),
+                              Text(data['description'] ?? '', style: TextStyle(color: Colors.grey[700]), maxLines: 2, overflow: TextOverflow.ellipsis),
                               SizedBox(height: 4),
-                              Text('₹${data['price']} • ${data['quantity']}kg',
-                                  style: TextStyle(color: Colors.green[700])),
+                              Text('₹${data['price']} • ${data['quantity']}kg', style: TextStyle(color: Colors.green[700])),
                               Divider(),
                               Text(traderInfo, style: TextStyle(fontSize: 13, color: Colors.black87)),
                             ],
@@ -153,10 +141,7 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab>
                                 icon: Icon(Icons.check_circle, color: Colors.green),
                                 onPressed: () async {
                                   try {
-                                    await FirebaseFirestore.instance
-                                        .collection('products')
-                                        .doc(doc.id)
-                                        .update({'isVerified': true});
+                                    await FirebaseFirestore.instance.collection('products').doc(doc.id).update({'isVerified': true});
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('✅ Product Verified'), backgroundColor: Colors.green),
                                     );
@@ -202,11 +187,14 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab>
 
   Widget _buildTraderDropdown() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'Trader').snapshots(),
+      stream: FirebaseFirestore.instance.collection('users').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return SizedBox();
 
-        final traders = snapshot.data!.docs;
+        final traders = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['role']?.toString().toLowerCase() == 'trader';
+        }).toList();
 
         return DropdownButtonFormField<String>(
           isExpanded: true,

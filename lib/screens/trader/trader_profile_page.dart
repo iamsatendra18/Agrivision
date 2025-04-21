@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:agrivision/utiles/routes/routes_name.dart';
 
 class TraderProfilePage extends StatefulWidget {
   const TraderProfilePage({super.key});
@@ -16,8 +15,10 @@ class _TraderProfilePageState extends State<TraderProfilePage> {
   final TextEditingController addressController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController imageController = TextEditingController();
 
   final uid = FirebaseAuth.instance.currentUser?.uid;
+  String imageUrl = '';
 
   @override
   void initState() {
@@ -34,6 +35,10 @@ class _TraderProfilePageState extends State<TraderProfilePage> {
         addressController.text = data['address'] ?? '';
         phoneController.text = data['phone'] ?? '';
         emailController.text = data['email'] ?? '';
+        imageController.text = data['imageUrl'] ?? '';
+        setState(() {
+          imageUrl = data['imageUrl'] ?? '';
+        });
       }
     }
   }
@@ -44,6 +49,7 @@ class _TraderProfilePageState extends State<TraderProfilePage> {
         'fullName': nameController.text.trim(),
         'address': addressController.text.trim(),
         'phone': phoneController.text.trim(),
+        'imageUrl': imageController.text.trim(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,6 +57,7 @@ class _TraderProfilePageState extends State<TraderProfilePage> {
       );
 
       setState(() {
+        imageUrl = imageController.text.trim();
         isEditing = false;
       });
     }
@@ -64,6 +71,12 @@ class _TraderProfilePageState extends State<TraderProfilePage> {
         isEditing = true;
       });
     }
+  }
+
+  bool _isValidImageUrl(String url) {
+    return (Uri.tryParse(url)?.hasAbsolutePath == true &&
+        (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.webp')))
+        || url.startsWith('assets/');
   }
 
   Widget buildTextField(String label, TextEditingController controller, {bool readOnly = false}) {
@@ -84,6 +97,22 @@ class _TraderProfilePageState extends State<TraderProfilePage> {
     );
   }
 
+  Widget buildImagePreview() {
+    if (imageUrl.isEmpty || !_isValidImageUrl(imageUrl)) {
+      return const CircleAvatar(
+        radius: 50,
+        backgroundImage: AssetImage('assets/agrivision_logo.png'),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 50,
+      backgroundImage: imageUrl.startsWith('assets/')
+          ? AssetImage(imageUrl) as ImageProvider
+          : NetworkImage(imageUrl),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,17 +129,13 @@ class _TraderProfilePageState extends State<TraderProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Profile Avatar Section
               Center(
                 child: Column(
                   children: [
                     CircleAvatar(
                       radius: 55,
                       backgroundColor: Color(0xFF2E7D32),
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundImage: AssetImage('assets/agrivision_logo.png'),
-                      ),
+                      child: buildImagePreview(),
                     ),
                     SizedBox(height: 12),
                     Text(
@@ -133,6 +158,8 @@ class _TraderProfilePageState extends State<TraderProfilePage> {
               buildTextField('Phone Number', phoneController),
               SizedBox(height: 12),
               buildTextField('Email', emailController, readOnly: true),
+              SizedBox(height: 12),
+              buildTextField('Image URL or Asset Path', imageController),
 
               SizedBox(height: 20),
 
