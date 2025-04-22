@@ -19,7 +19,6 @@ class _SignupScreenState extends State<SignupScreen> {
   String selectedRole = 'User';
   bool acceptTerms = false;
 
-  // 👁️ Visibility toggles
   bool _showPassword = false;
   bool _showConfirmPassword = false;
 
@@ -123,8 +122,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 SizedBox(height: 12),
                 _buildTextField('Email', emailController, icon: Icons.email, validator: validateEmail),
                 SizedBox(height: 12),
-
-                // ✅ Password with eye toggle
                 _buildTextField(
                   'Password',
                   passwordController,
@@ -139,10 +136,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     });
                   },
                 ),
-
                 SizedBox(height: 12),
-
-                // ✅ Confirm Password with eye toggle
                 _buildTextField(
                   'Confirm Password',
                   confirmPasswordController,
@@ -161,9 +155,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     return null;
                   },
                 ),
-
                 SizedBox(height: 12),
-
                 DropdownButtonFormField<String>(
                   value: selectedRole,
                   items: ['User', 'Trader'].map((role) {
@@ -187,9 +179,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     fillColor: Color(0xFFE8F5E9),
                   ),
                 ),
-
                 SizedBox(height: 12),
-
                 Row(
                   children: [
                     Checkbox(
@@ -209,9 +199,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ],
                 ),
-
                 SizedBox(height: 20),
-
                 authProvider.isLoading
                     ? CircularProgressIndicator()
                     : SizedBox(
@@ -230,7 +218,12 @@ class _SignupScreenState extends State<SignupScreen> {
                             context,
                           );
 
-                          Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
+                          // 🔁 Redirect to OTP screen with email
+                          Navigator.pushNamed(
+                            context,
+                            RoutesName.otpScreen,
+                            arguments: {'email': emailController.text.trim()},
+                          );
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text("Signup failed: ${e.toString()}")),
@@ -252,9 +245,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
-
                 SizedBox(height: 20),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

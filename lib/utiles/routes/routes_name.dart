@@ -46,6 +46,8 @@ class RoutesName {
   static const String orderMapSummaryScreen = 'order_map_summary_screen';
   static const String orderDetailsScreen = 'order_details_screen';
   static const String esewaPaymentScreen = 'esewa_payment_screen';
+  static const String otpScreen = 'otp_screen';
+
 
 
 

@@ -16,6 +16,7 @@ import '../../screens/admin/climate_guideness_tab.dart';
 import '../../screens/admin/crop_recommendation_tab.dart';
 import '../../screens/admin/view_response_screen.dart';
 import '../../screens/auth/admin_login_screen.dart';
+import '../../screens/auth/otp_screen.dart';
 import '../../screens/trader/trader_add_product_screen.dart';
 import '../../screens/trader/trader_climate_guidencess_screen.dart';
 import '../../screens/trader/trader_contact_us_screen.dart';
@@ -134,6 +135,8 @@ class Routes {
         return MaterialPageRoute(builder: (_) => TraderPrivacyPolicyScreen());
       case RoutesName.termsAndConditionsScreen:
         return MaterialPageRoute(builder: (_) => TermsAndConditionsScreen());
+      case RoutesName.otpScreen:
+        return MaterialPageRoute(builder: (_) => OTPScreen());
       case RoutesName.tradertermsAndConditionsScreen:
         return MaterialPageRoute(builder: (_) => TraderTermsAndConditionsScreen());
       case RoutesName.orderDetailsScreen:

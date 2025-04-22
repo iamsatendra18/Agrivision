@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/trader/trader_home_screen.dart';
 import '../screens/user/navigation_menu.dart';
+import 'package:agrivision/services/email_otp_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -159,6 +160,17 @@ class AuthProvider with ChangeNotifier {
         SnackBar(content: Text("An error occurred: ${e.toString()}")),
       );
     }
+    String otp = EmailOTPService.generateOtp();
+
+    bool success = await EmailOTPService.sendOtpEmail(email, otp);
+
+    if (success) {
+      print("OTP sent successfully: $otp");
+      // Show OTP input dialog or screen
+    } else {
+      print("Failed to send OTP");
+      // Show error dialog/snackbar
+    }
 
     _isLoading = false;
     notifyListeners();
@@ -167,4 +179,5 @@ class AuthProvider with ChangeNotifier {
   void logout() {
     _auth.signOut();
   }
+
 }
