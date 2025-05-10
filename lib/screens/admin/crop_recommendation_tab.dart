@@ -14,7 +14,7 @@ class _CropRecommendationTabState extends State<CropRecommendationTab> {
   String selectedMonth = _getCurrentMonth();
   String? selectedLocation;
 
-  String? editingDocId; // Track which doc is being edited
+  String? editingDocId;
   bool isLoading = false;
 
   final List<String> locations = [
@@ -37,7 +37,7 @@ class _CropRecommendationTabState extends State<CropRecommendationTab> {
 
     if (cropText.isEmpty || location.isEmpty || soilType.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('⚠️ Please enter all fields (location, soil type, crops).'),
+        content: Text(' Please enter all fields (location, soil type, crops).'),
         backgroundColor: Colors.orange,
       ));
       return;
@@ -69,7 +69,7 @@ class _CropRecommendationTabState extends State<CropRecommendationTab> {
       _resetForm();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('❌ Failed: $e'),
+        content: Text(' Failed: $e'),
         backgroundColor: Colors.red,
       ));
     } finally {
@@ -98,7 +98,7 @@ class _CropRecommendationTabState extends State<CropRecommendationTab> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('❌ Failed to delete: $e'),
+        content: Text(' Failed to delete: $e'),
         backgroundColor: Colors.red,
       ));
     }
@@ -116,130 +116,145 @@ class _CropRecommendationTabState extends State<CropRecommendationTab> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 700;
+
     return Scaffold(
-      appBar: AppBar(title: Text('Crop Recommendations'), backgroundColor: Colors.green[700]),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Select Month', style: TextStyle(fontWeight: FontWeight.bold)),
-            DropdownButton<String>(
-              value: selectedMonth,
-              isExpanded: true,
-              items: List.generate(12, (index) {
-                final month = [
-                  'january', 'february', 'march', 'april', 'may', 'june',
-                  'july', 'august', 'september', 'october', 'november', 'december'
-                ][index];
-                return DropdownMenuItem(value: month, child: Text(month.toUpperCase()));
-              }),
-              onChanged: (value) => setState(() => selectedMonth = value!),
-            ),
-            SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: selectedLocation,
-              decoration: InputDecoration(
-                labelText: 'Select Location',
-                border: OutlineInputBorder(),
-              ),
-              items: locations.map((location) {
-                return DropdownMenuItem(
-                  value: location,
-                  child: Text(location[0].toUpperCase() + location.substring(1)),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() => selectedLocation = value),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _soilController,
-              decoration: InputDecoration(
-                labelText: 'Soil Type (e.g. Loam, Sandy, Clay)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _cropController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                labelText: 'Recommended Crops',
-                hintText: 'Wheat, Rice, Bajra',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: isLoading ? null : _submitRecommendation,
-                    icon: Icon(editingDocId == null ? Icons.save : Icons.edit),
-                    label: Text(editingDocId == null ? 'Save Recommendation' : 'Update Recommendation'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  ),
-                ),
-                if (editingDocId != null) ...[
-                  SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _resetForm,
-                    icon: Icon(Icons.clear, color: Colors.red),
-                  ),
-                ]
-              ],
-            ),
-            Divider(height: 30),
-            Text('Previous Recommendations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            SizedBox(height: 10),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('crop_recommendations')
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-                final docs = snapshot.data!.docs;
-                if (docs.isEmpty) return Text("No history available");
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final doc = docs[index];
-                    final data = doc.data() as Map<String, dynamic>;
-                    return Card(
-                      margin: EdgeInsets.symmetric(vertical: 6),
-                      color: editingDocId == doc.id ? Colors.green[50] : null,
-                      child: ListTile(
-                        title: Text(
-                          "${data['month'].toString().toUpperCase()} - ${data['location']}",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          "Soil: ${data['soilType'] ?? 'N/A'}\nCrops: ${data['crops'] ?? ''}",
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () => _editRecommendation(data, doc.id),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _deleteRecommendation(doc.id),
-                            ),
-                          ],
-                        ),
+      appBar: AppBar(
+        title: Text('Crop Recommendations'),
+        backgroundColor: Colors.green[700],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 700),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Select Month', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButton<String>(
+                      value: selectedMonth,
+                      isExpanded: true,
+                      items: List.generate(12, (index) {
+                        final month = [
+                          'january', 'february', 'march', 'april', 'may', 'june',
+                          'july', 'august', 'september', 'october', 'november', 'december'
+                        ][index];
+                        return DropdownMenuItem(value: month, child: Text(month.toUpperCase()));
+                      }),
+                      onChanged: (value) => setState(() => selectedMonth = value!),
+                    ),
+                    SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: selectedLocation,
+                      decoration: InputDecoration(
+                        labelText: 'Select Location',
+                        border: OutlineInputBorder(),
                       ),
-                    );
-                  },
-                );
-              },
+                      items: locations.map((location) {
+                        return DropdownMenuItem(
+                          value: location,
+                          child: Text(location[0].toUpperCase() + location.substring(1)),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => selectedLocation = value),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _soilController,
+                      decoration: InputDecoration(
+                        labelText: 'Soil Type (e.g. Loam, Sandy, Clay)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _cropController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        labelText: 'Recommended Crops',
+                        hintText: 'Wheat, Rice, Bajra',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: isLoading ? null : _submitRecommendation,
+                            icon: Icon(editingDocId == null ? Icons.save : Icons.edit),
+                            label: Text(editingDocId == null ? 'Save Recommendation' : 'Update Recommendation'),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                          ),
+                        ),
+                        if (editingDocId != null) ...[
+                          SizedBox(width: 8),
+                          IconButton(
+                            onPressed: _resetForm,
+                            icon: Icon(Icons.clear, color: Colors.red),
+                          ),
+                        ]
+                      ],
+                    ),
+                    Divider(height: 30),
+                    Text('Previous Recommendations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    SizedBox(height: 10),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('crop_recommendations')
+                          .orderBy('createdAt', descending: true)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+                        final docs = snapshot.data!.docs;
+                        if (docs.isEmpty) return Text("No history available");
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: docs.length,
+                          itemBuilder: (context, index) {
+                            final doc = docs[index];
+                            final data = doc.data() as Map<String, dynamic>;
+                            return Card(
+                              margin: EdgeInsets.symmetric(vertical: 6),
+                              color: editingDocId == doc.id ? Colors.green[50] : null,
+                              child: ListTile(
+                                title: Text(
+                                  "${data['month'].toString().toUpperCase()} - ${data['location']}",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Text(
+                                  "Soil: ${data['soilType'] ?? 'N/A'}\nCrops: ${data['crops'] ?? ''}",
+                                ),
+                                trailing: Wrap(
+                                  spacing: 6,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit, color: Colors.blue),
+                                      onPressed: () => _editRecommendation(data, doc.id),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _deleteRecommendation(doc.id),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

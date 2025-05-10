@@ -37,12 +37,7 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
   final String _secretKey = "BhwIWQQADhIYSxILExMcAgFXFhcOBwAKBgAXEQ==";
   String selectedPayment = 'Cash on Delivery';
   double deliveryCharge = 30.0;
-
-  // void _openMap() {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     const SnackBar(content: Text("📍 Map opened for location confirmation")),
-  //   );
-  // }
+  LatLng? selectedLocation;
 
   void _openMap() async {
     final result = await Navigator.push(
@@ -57,27 +52,27 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
 
     if (result != null && result is LatLng) {
       setState(() {
-        shippingAddressController.text =
-        "Lat: ${result.latitude}, Lng: ${result.longitude}";
+        selectedLocation = result;
+        shippingAddressController.text = "Lat: ${result.latitude}, Lng: ${result.longitude}";
       });
     }
   }
 
   void _payWithEsewa(String note, String address, double total) async {
-
     try {
       EsewaFlutterSdk.initPayment(
         esewaConfig: EsewaConfig(
-            clientId: _clientId,
-            secretId: _secretKey,
-            environment: Environment.test),
+          clientId: _clientId,
+          secretId: _secretKey,
+          environment: Environment.test,
+        ),
         onPaymentSuccess: (EsewaPaymentSuccessResult data) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Payment Successful!}")),
+            SnackBar(content: Text("Payment Successful!")),
           );
           _saveOrderToFirestore(note, address, total, 'eSewa');
-          },
-        onPaymentFailure: ( data) {
+        },
+        onPaymentFailure: (data) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Payment Failed: ${data.message}")),
           );
@@ -88,12 +83,12 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
           );
         },
         esewaPayment: EsewaPayment(
-            productId: "ORDER_${DateTime.now().millisecondsSinceEpoch}",
-            productName: 'Test Product',
-            productPrice: widget.totalAmount.toString(),
-            callbackUrl: 'https://yourdomain.com/callback'),
+          productId: "ORDER_${DateTime.now().millisecondsSinceEpoch}",
+          productName: 'AgriVision Order',
+          productPrice: widget.totalAmount.toString(),
+          callbackUrl: 'https://yourdomain.com/callback',
+        ),
       );
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
@@ -119,7 +114,6 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
       _payWithEsewa(note, address, total);
     }
   }
-  
 
   void _saveOrderToFirestore(String note, String address, double total, String paymentMethod) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -131,24 +125,27 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
       return;
     }
 
-    final newOrder = {
+    final traderId = widget.cartItems.isNotEmpty ? widget.cartItems[0]['traderId'] : null;
+
+    final order = {
       'userId': userId,
+      'traderId': traderId,
       'items': widget.cartItems,
       'note': note,
       'deliveryAddress': address,
-      'latitude': widget.latitude,
-      'longitude': widget.longitude,
+      'latitude': selectedLocation?.latitude ?? widget.latitude,
+      'longitude': selectedLocation?.longitude ?? widget.longitude,
       'totalAmount': total,
       'paymentMethod': paymentMethod,
       'status': 'Pending',
-      'timestamp': Timestamp.now(),
+      'orderedAt': Timestamp.now(),
     };
 
-    await FirebaseFirestore.instance.collection('orders').add(newOrder);
-    await _clearCart(userId); // ✅ Clear cart after order
+    await FirebaseFirestore.instance.collection('orders').add(order);
+    await _clearCart(userId);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("✅ Order placed successfully!")),
+      const SnackBar(content: Text("Order placed successfully!")),
     );
 
     if (widget.onOrderPlaced != null) {
@@ -182,13 +179,12 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("💾 Saved: Note & Address")),
       );
-      debugPrint("Saved Note: $note");
-      debugPrint("Saved Address: $address");
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     double total = widget.totalAmount + deliveryCharge;
 
     return Scaffold(
@@ -198,12 +194,12 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 20),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("📝 Note:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text("📝 Note:", style: TextStyle(fontSize: screenWidth * 0.045, fontWeight: FontWeight.bold)),
               const SizedBox(height: 5),
               TextField(
                 controller: noteController,
@@ -214,16 +210,8 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
                 maxLines: 3,
               ),
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("📍 Shipping to:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-
-                ],
-              ),  TextButton(
-                onPressed: _openMap,
-                child: const Text("Proceed"),
-              ),
+              Text("📍 Shipping to:", style: TextStyle(fontSize: screenWidth * 0.045, fontWeight: FontWeight.bold)),
+              TextButton(onPressed: _openMap, child: const Text("Proceed")),
               TextField(
                 controller: shippingAddressController,
                 decoration: const InputDecoration(
@@ -254,7 +242,7 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text("💳 Choose Payment:", style: TextStyle(fontSize: 18)),
+              Text("💳 Choose Payment:", style: TextStyle(fontSize: screenWidth * 0.045)),
               DropdownButtonFormField<String>(
                 value: selectedPayment,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
@@ -262,24 +250,32 @@ class _CheckoutDetailsScreenState extends State<CheckoutDetailsScreen> {
                   DropdownMenuItem(value: 'Cash on Delivery', child: Text('Cash on Delivery')),
                   DropdownMenuItem(value: 'eSewa', child: Text('eSewa')),
                 ],
-                onChanged: (val) {
-                  setState(() => selectedPayment = val!);
-                },
+                onChanged: (val) => setState(() => selectedPayment = val!),
               ),
               const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _placeOrder,
-                child: const Text("🛒 Place Order"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  textStyle: const TextStyle(fontSize: 18),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _placeOrder,
+                  child: const Text("🛒 Place Order"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: EdgeInsets.symmetric(vertical: screenWidth * 0.04),
+                    textStyle: TextStyle(fontSize: screenWidth * 0.045),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
-              OutlinedButton(
-                onPressed: _saveDraft,
-                child: const Text("💾 Save"),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: _saveDraft,
+                  child: const Text("💾 Save"),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: screenWidth * 0.035),
+                    textStyle: TextStyle(fontSize: screenWidth * 0.045),
+                  ),
+                ),
               ),
             ],
           ),

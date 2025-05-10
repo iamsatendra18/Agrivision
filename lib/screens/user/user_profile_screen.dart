@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:agrivision/utiles/routes/routes_name.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -55,7 +54,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ Profile updated successfully!')),
+        SnackBar(content: Text('Profile updated successfully!')),
       );
 
       setState(() {
@@ -77,8 +76,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   bool _isValidImageUrl(String url) {
     return (Uri.tryParse(url)?.hasAbsolutePath == true &&
-        (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.webp')))
-        || url.startsWith('assets/');
+        (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.webp'))) ||
+        url.startsWith('assets/');
   }
 
   Widget buildTextField(String label, TextEditingController controller, {bool readOnly = false}) {
@@ -106,29 +105,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     return CircleAvatar(
       radius: 50,
-      backgroundImage: imageUrl.startsWith('assets/')
-          ? AssetImage(imageUrl) as ImageProvider
-          : NetworkImage(imageUrl),
+      backgroundImage:
+      imageUrl.startsWith('assets/') ? AssetImage(imageUrl) as ImageProvider : NetworkImage(imageUrl),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Color(0xFFF1F8E9),
       appBar: AppBar(
-        title: Text('User Profile'),
+        title: Text('User Profile', style: TextStyle(fontSize: screenWidth * 0.05)),
         centerTitle: true,
         backgroundColor: Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Profile Avatar
               Center(
                 child: Column(
                   children: [
@@ -140,30 +139,32 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     SizedBox(height: 12),
                     Text(
                       nameController.text,
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.055,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B5E20),
+                      ),
                     ),
                     Text(
                       addressController.text,
-                      style: TextStyle(fontSize: 16, color: Colors.green[800]),
+                      style: TextStyle(fontSize: screenWidth * 0.042, color: Colors.green[800]),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               buildTextField('Full Name', nameController),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               buildTextField('Address', addressController),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               buildTextField('Phone Number', phoneController),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               buildTextField('Email', emailController, readOnly: true),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               buildTextField('Image URL or Asset Path', imageController),
+              const SizedBox(height: 20),
 
-              SizedBox(height: 20),
-
-              // Save Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -171,10 +172,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   icon: Icon(isEditing ? Icons.save : Icons.edit, color: Colors.white),
                   label: Text(
                     isEditing ? 'Save Profile' : 'Edit Profile',
-                    style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: screenWidth * 0.045, color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: screenWidth * 0.04),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     backgroundColor: Color(0xFF1B5E20),
                   ),

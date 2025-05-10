@@ -24,7 +24,7 @@ class TraderNotificationScreen extends StatelessWidget {
 
           final userData = snapshot.data?.data() as Map<String, dynamic>?;
           if (userData == null || !userData.containsKey('role')) {
-            return const Center(child: Text("❌ Role not found. Please contact support."));
+            return const Center(child: Text(" Role not found. Please contact support."));
           }
 
           final String role = userData['role'].toString().toLowerCase().trim();

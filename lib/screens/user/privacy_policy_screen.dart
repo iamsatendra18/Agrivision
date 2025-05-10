@@ -13,7 +13,7 @@ At AgriVision, we are committed to protecting your personal data and respecting 
 
 We may collect the following types of information:
 - Personal Information: Full name, email address, mobile number, address, and profile details.
-- Usage Data: App interaction data, search queries, features accessed, and session durations..
+- Usage Data: App interaction data, search queries, features accessed, and session durations.
 - Device Information: Device model, operating system, IP address, app version, and device identifiers.
 
 2. How We Use Your Information
@@ -55,14 +55,16 @@ If you have any questions or concerns about this Privacy Policy, you can contact
 📞 Phone: +977-9817276496
 
 Thank you for trusting AgriVision to support your agricultural journey.
-  ''';
+''';
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Privacy Policy'),
-        backgroundColor: Color(0xFF2E7D32),
+        title: Text('Privacy Policy', style: TextStyle(fontSize: screenWidth * 0.05)),
+        backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
       body: FutureBuilder<DocumentSnapshot>(
@@ -72,7 +74,7 @@ Thank you for trusting AgriVision to support your agricultural journey.
             .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           String policyText = defaultPolicyText;
@@ -83,11 +85,11 @@ Thank you for trusting AgriVision to support your agricultural journey.
           }
 
           return Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 20),
             child: SingleChildScrollView(
               child: Text(
                 policyText,
-                style: TextStyle(fontSize: 16, height: 1.6),
+                style: TextStyle(fontSize: screenWidth * 0.042, height: 1.6),
               ),
             ),
           );

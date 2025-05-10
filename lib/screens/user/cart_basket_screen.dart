@@ -20,13 +20,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
   }
 
   void increaseQuantity(DocumentSnapshot itemDoc) {
-    if (itemDoc['quantity'] < 15) {
-      itemDoc.reference.update({'quantity': itemDoc['quantity'] + 1});
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Maximum quantity is 15!")),
-      );
-    }
+    itemDoc.reference.update({'quantity': itemDoc['quantity'] + 1});
   }
 
   void decreaseQuantity(DocumentSnapshot itemDoc) {
@@ -47,10 +41,7 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
         title: Text("Delete ${item['name']}?"),
         content: const Text("Are you sure you want to remove this item from cart?"),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
@@ -68,16 +59,14 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
 
   void saveCart() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("✅ Cart saved successfully!")),
+      const SnackBar(content: Text(" Cart saved successfully!")),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     if (userId == null) {
-      return const Scaffold(
-        body: Center(child: Text("User not logged in")),
-      );
+      return const Scaffold(body: Center(child: Text("User not logged in")));
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -113,9 +102,9 @@ class _CartBasketScreenState extends State<CartBasketScreen> {
               'price': price,
               'quantity': quantity,
               'total': price * quantity,
-              'image': item['imageUrl'] ?? '',
               'imageUrl': item['imageUrl'] ?? '',
               'traderId': item['traderId'] ?? '',
+              'productId': item['productId'] ?? '',
             };
           }).toList();
 

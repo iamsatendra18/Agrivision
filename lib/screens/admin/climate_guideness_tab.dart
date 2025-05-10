@@ -16,7 +16,8 @@ class _ClimateGuidenessTabState extends State<ClimateGuidenessTab> {
   }
 
   Future<void> _fetchClimateGuidance() async {
-    final snapshot = await FirebaseFirestore.instance.collection('climate_guidance').get();
+    final snapshot =
+    await FirebaseFirestore.instance.collection('climate_guidance').get();
 
     setState(() {
       guidanceCards = snapshot.docs.map((doc) {
@@ -46,46 +47,95 @@ class _ClimateGuidenessTabState extends State<ClimateGuidenessTab> {
   }
 
   void _showEditDialog(_ClimateCardData card) {
-    final TextEditingController _controller = TextEditingController(text: card.description);
+    final TextEditingController _controller =
+    TextEditingController(text: card.description);
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Update ${card.title}'),
-        content: TextField(
-          controller: _controller,
-          maxLines: 5,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Enter updated guidance',
+      builder: (context) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        return AlertDialog(
+          title: Text('Update ${card.title}'),
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: 300,
+              maxWidth: screenWidth * 0.9,
+            ),
+            child: TextField(
+              controller: _controller,
+              maxLines: 5,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Enter updated guidance',
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                String updatedText = _controller.text.trim();
+                if (updatedText.isNotEmpty) {
+                  await FirebaseFirestore.instance
+                      .collection('climate_guidance')
+                      .doc(card.id)
+                      .update({'description': updatedText});
+
+                  Navigator.pop(context);
+                  _fetchClimateGuidance();
+
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('${card.title} updated successfully'),
+                    backgroundColor: Colors.green,
+                  ));
+                }
+              },
+              child: Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCard(_ClimateCardData card) {
+    return GestureDetector(
+      onTap: () => _showEditDialog(card),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 4,
+        margin: EdgeInsets.symmetric(vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(card.icon, size: 30, color: Colors.green),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      card.title,
+                      style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      card.description,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.edit, color: Colors.grey),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              String updatedText = _controller.text.trim();
-              if (updatedText.isNotEmpty) {
-                await FirebaseFirestore.instance
-                    .collection('climate_guidance')
-                    .doc(card.id)
-                    .update({'description': updatedText});
-
-                Navigator.pop(context);
-                _fetchClimateGuidance();
-
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('✅ ${card.title} updated successfully'),
-                  backgroundColor: Colors.green,
-                ));
-              }
-            },
-            child: Text('Update'),
-          ),
-        ],
       ),
     );
   }
@@ -98,36 +148,33 @@ class _ClimateGuidenessTabState extends State<ClimateGuidenessTab> {
         backgroundColor: Color(0xFF2E7D32),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: guidanceCards.isEmpty
           ? Center(child: CircularProgressIndicator())
           : Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: guidanceCards.length,
-          itemBuilder: (context, index) {
-            final card = guidanceCards[index];
-            return GestureDetector(
-              onTap: () => _showEditDialog(card),
-              child: Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 4,
-                margin: EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  leading: Icon(card.icon, size: 30, color: Colors.green),
-                  title: Text(
-                    card.title,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(card.description),
-                  trailing: Icon(Icons.edit, color: Colors.grey),
-                ),
-              ),
-            );
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 600) {
+              // Tablet/Desktop
+              return GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 3,
+                children:
+                guidanceCards.map((card) => _buildCard(card)).toList(),
+              );
+            } else {
+              // Mobile
+              return ListView.builder(
+                itemCount: guidanceCards.length,
+                itemBuilder: (context, index) =>
+                    _buildCard(guidanceCards[index]),
+              );
+            }
           },
         ),
       ),

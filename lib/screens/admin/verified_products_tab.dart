@@ -24,7 +24,7 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab> with SingleTi
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ Failed to delete: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(' Failed to delete: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -44,14 +44,14 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab> with SingleTi
         if (snapshot.connectionState == ConnectionState.waiting)
           return Center(child: CircularProgressIndicator());
         if (snapshot.hasError)
-          return Center(child: Text('❌ Error loading products'));
+          return Center(child: Text(' Error loading products'));
 
         final products = snapshot.data?.docs ?? [];
 
         if (products.isEmpty) {
           return Center(
             child: Text(
-              isVerified ? "✅ No verified products available." : "✅ No products pending verification.",
+              isVerified ? " No verified products available." : " No products pending verification.",
               style: TextStyle(fontSize: 16),
             ),
           );
@@ -143,11 +143,11 @@ class _VerifiedProductsTabState extends State<VerifiedProductsTab> with SingleTi
                                   try {
                                     await FirebaseFirestore.instance.collection('products').doc(doc.id).update({'isVerified': true});
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('✅ Product Verified'), backgroundColor: Colors.green),
+                                      SnackBar(content: Text(' Product Verified'), backgroundColor: Colors.green),
                                     );
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('❌ Failed: $e'), backgroundColor: Colors.red),
+                                      SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
                                     );
                                   }
                                 },

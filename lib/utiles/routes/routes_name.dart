@@ -1,6 +1,6 @@
 class RoutesName {
   static const String homeScreen = 'home_screen';
-  static const String traderHomeScreen = 'trader_home_screen'; // Ensure this exists
+  static const String traderHomeScreen = 'trader_home_screen'; 
   static const String loginScreen = 'login_screen';
   static const String signupScreen = 'signup_screen';
   static const String forgotPasswordScreen = 'forgot_password';

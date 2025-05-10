@@ -90,7 +90,7 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
         imageUrlToUpdate = await _uploadImage(_newImageFile!);
       } else if (!_isValidImageUrl(_imageUrl)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Invalid image URL or path.")),
+          SnackBar(content: Text("Invalid image URL or path.")),
         );
         setState(() => _isLoading = false);
         return;
@@ -108,7 +108,7 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ Product updated successfully!")),
+        SnackBar(content: Text(" Product updated successfully!")),
       );
 
       Navigator.pushNamedAndRemoveUntil(
@@ -118,7 +118,7 @@ class _TraderEditProductScreenState extends State<TraderEditProductScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error: $e")),
+        SnackBar(content: Text(" Error: $e")),
       );
     } finally {
       setState(() => _isLoading = false);

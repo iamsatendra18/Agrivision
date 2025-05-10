@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class OrderHistoryTab extends StatelessWidget {
@@ -15,7 +15,10 @@ class OrderHistoryTab extends StatelessWidget {
         centerTitle: true,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('orders').orderBy('timestamp', descending: true).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('orders')
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
@@ -34,34 +37,27 @@ class OrderHistoryTab extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // Checking if the screen width is smaller than 600px (for smaller devices)
-                bool isSmallScreen = constraints.maxWidth < 600;
+                final isSmallScreen = constraints.maxWidth < 600;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Order Summary", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    const Text("Order Summary",
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 10),
-                    isSmallScreen
-                        ? Column(
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
                       children: [
-                        _buildStatusCard('Pending', pending, Colors.orange),
-                        _buildStatusCard('Shipped', shipped, Colors.blue),
-                        _buildStatusCard('Delivered', delivered, Colors.green),
-                        _buildStatusCard('Cancelled', cancelled, Colors.red),
-                      ],
-                    )
-                        : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStatusCard('Pending', pending, Colors.orange),
-                        _buildStatusCard('Shipped', shipped, Colors.blue),
-                        _buildStatusCard('Delivered', delivered, Colors.green),
-                        _buildStatusCard('Cancelled', cancelled, Colors.red),
+                        _buildStatusCard('Pending', pending, Colors.orange, constraints),
+                        _buildStatusCard('Shipped', shipped, Colors.blue, constraints),
+                        _buildStatusCard('Delivered', delivered, Colors.green, constraints),
+                        _buildStatusCard('Cancelled', cancelled, Colors.red, constraints),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    const Text("All Orders", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text("All Orders",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 10),
                     Expanded(
                       child: ListView.builder(
@@ -77,34 +73,67 @@ class OrderHistoryTab extends StatelessWidget {
                           final date = (data['timestamp'] as Timestamp).toDate();
 
                           return FutureBuilder<DocumentSnapshot>(
-                            future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
+                            future: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(userId)
+                                .get(),
                             builder: (context, userSnap) {
-                              final userName = (userSnap.data?.data() as Map<String, dynamic>?)?['fullName'] ?? 'Unknown';
+                              final userName = (userSnap.data?.data()
+                              as Map<String, dynamic>?)?['fullName'] ??
+                                  'Unknown';
 
                               return Card(
                                 margin: const EdgeInsets.symmetric(vertical: 6),
-                                child: ListTile(
-                                  leading: const Icon(Icons.receipt_long, color: Colors.green),
-                                  title: Text("Order #$orderId"),
-                                  subtitle: Column(
+                                elevation: 3,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 12),
+                                  child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.receipt_long,
+                                              color: Colors.green),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text("Order #$orderId",
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold)),
+                                          ),
+                                          PopupMenuButton<String>(
+                                            onSelected: (val) {
+                                              FirebaseFirestore.instance
+                                                  .collection('orders')
+                                                  .doc(orderId)
+                                                  .update({'status': val});
+                                            },
+                                            itemBuilder: (context) =>
+                                                ['Pending', 'Shipped', 'Delivered', 'Cancelled']
+                                                    .map((s) =>
+                                                    PopupMenuItem(value: s, child: Text(s)))
+                                                    .toList(),
+                                            child: Chip(
+                                              label: Text(
+                                                status,
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: _getStatusColor(status)),
+                                              ),
+                                              backgroundColor:
+                                              _getStatusColor(status).withOpacity(0.2),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
                                       Text("👤 Buyer: $userName"),
                                       Text("🛒 Items: ${items.length} | ₹$totalAmount"),
-                                      Text("📅 ${DateFormat.yMMMd().add_jm().format(date)}"),
+                                      Text(
+                                        "📅 ${DateFormat.yMMMd().add_jm().format(date)}",
+                                        style: const TextStyle(color: Colors.grey),
+                                      ),
                                     ],
-                                  ),
-                                  trailing: PopupMenuButton<String>(
-                                    onSelected: (val) {
-                                      FirebaseFirestore.instance.collection('orders').doc(orderId).update({'status': val});
-                                    },
-                                    itemBuilder: (context) => ['Pending', 'Shipped', 'Delivered', 'Cancelled']
-                                        .map((s) => PopupMenuItem(value: s, child: Text(s)))
-                                        .toList(),
-                                    child: Chip(
-                                      label: Text(status, style: TextStyle(fontWeight: FontWeight.bold, color: _getStatusColor(status))),
-                                      backgroundColor: _getStatusColor(status).withOpacity(0.2),
-                                    ),
                                   ),
                                 ),
                               );
@@ -123,17 +152,29 @@ class OrderHistoryTab extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusCard(String label, int count, Color color) {
-    return Card(
-      color: color,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Column(
-          children: [
-            Text(label, style: const TextStyle(fontSize: 16, color: Colors.white)),
-            const SizedBox(height: 6),
-            Text('$count', style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
-          ],
+  Widget _buildStatusCard(
+      String label, int count, Color color, BoxConstraints constraints) {
+    final isSmallScreen = constraints.maxWidth < 600;
+    return Container(
+      width: isSmallScreen ? double.infinity : constraints.maxWidth / 4 - 12,
+      child: Card(
+        color: color,
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(label,
+                  style: const TextStyle(fontSize: 16, color: Colors.white)),
+              const SizedBox(height: 6),
+              Text('$count',
+                  style: const TextStyle(
+                      fontSize: 22,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
       ),
     );

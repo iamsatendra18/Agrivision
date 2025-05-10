@@ -30,7 +30,7 @@ class _TraderProductListScreenState extends State<TraderProductListScreen> {
         await FirebaseFirestore.instance.collection('products').doc(productId).delete();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("🗑️ Product deleted.")));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Failed to delete: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(" Failed to delete: $e")));
       }
     }
   }

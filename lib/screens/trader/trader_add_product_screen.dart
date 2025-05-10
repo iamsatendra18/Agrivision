@@ -30,10 +30,7 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
 
   bool _isValidImageUrl(String url) {
     return (Uri.tryParse(url)?.hasAbsolutePath == true &&
-        (url.endsWith('.jpg') ||
-            url.endsWith('.jpeg') ||
-            url.endsWith('.png') ||
-            url.endsWith('.webp'))) ||
+        (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.webp'))) ||
         url.startsWith('assets/');
   }
 
@@ -43,17 +40,16 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
     _formKey.currentState!.save();
     final currentUser = FirebaseAuth.instance.currentUser;
 
-    // Check for critical nulls before proceeding
     if (selectedCategory == null || imageUrl.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Please fill all required fields properly.")),
+        SnackBar(content: Text("Please fill all required fields properly.")),
       );
       return;
     }
 
     if (!_isValidImageUrl(imageUrl)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Please enter a valid image URL or asset path.")),
+        SnackBar(content: Text("Please enter a valid image URL or asset path.")),
       );
       return;
     }
@@ -74,7 +70,7 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ Product submitted for admin verification.")),
+        SnackBar(content: Text("Product submitted for admin verification.")),
       );
 
       _formKey.currentState?.reset();
@@ -84,7 +80,7 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Failed to add product: ${e.toString()}")),
+        SnackBar(content: Text("Failed to add product: ${e.toString()}")),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -93,36 +89,38 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add New Product'),
+        title: Text('Add New Product', style: TextStyle(fontSize: screenWidth * 0.05)),
         backgroundColor: Colors.green.shade700,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(screenWidth * 0.05),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
+            _buildHeader(screenWidth),
             SizedBox(height: 20),
-            _buildProductForm(),
+            _buildProductForm(screenWidth),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(double screenWidth) {
     return Row(
       children: [
-        Icon(Icons.agriculture, color: Colors.green, size: 40),
+        Icon(Icons.agriculture, color: Colors.green, size: screenWidth * 0.08),
         SizedBox(width: 10),
         Text(
           "Add Your Product",
           style: TextStyle(
-            fontSize: 22,
+            fontSize: screenWidth * 0.06,
             fontWeight: FontWeight.bold,
             color: Colors.green.shade800,
           ),
@@ -131,12 +129,12 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
     );
   }
 
-  Widget _buildProductForm() {
+  Widget _buildProductForm(double screenWidth) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(screenWidth * 0.05),
         child: Form(
           key: _formKey,
           child: Column(
@@ -145,15 +143,17 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
               _buildTextField("Product Name", "Enter product name", (value) => productName = value),
               _buildCategoryDropdown(),
               _buildTextField("Quantity (kg/liter)", "Enter quantity",
-                      (value) => quantity = double.tryParse(value) ?? 0, keyboardType: TextInputType.number),
+                      (value) => quantity = double.tryParse(value) ?? 0,
+                  keyboardType: TextInputType.number),
               _buildTextField("Price (₹)", "Enter price",
-                      (value) => price = double.tryParse(value) ?? 0, keyboardType: TextInputType.number),
-              _buildTextField("Description", "Enter product description", (value) => description = value, maxLines: 3),
+                      (value) => price = double.tryParse(value) ?? 0,
+                  keyboardType: TextInputType.number),
+              _buildTextField("Description", "Enter product description", (value) => description = value,
+                  maxLines: 3),
               _buildImageUrlField(),
               _buildImagePreview(),
               SizedBox(height: 20),
-
-              _buildSubmitButton(),
+              _buildSubmitButton(screenWidth),
             ],
           ),
         ),
@@ -233,7 +233,7 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
             return Container(
               height: 180,
               color: Colors.grey[300],
-              child: Center(child: Text("⚠️ Image not available")),
+              child: Center(child: Text("Image not available")),
             );
           },
         ),
@@ -241,7 +241,7 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
+  Widget _buildSubmitButton(double screenWidth) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -249,9 +249,9 @@ class _TraderAddProductScreenState extends State<TraderAddProductScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green.shade700,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(vertical: screenWidth * 0.04),
         ),
-        child: Text("Submit for Approval", style: TextStyle(fontSize: 18, color: Colors.white)),
+        child: Text("Submit for Approval", style: TextStyle(fontSize: screenWidth * 0.045, color: Colors.white)),
       ),
     );
   }

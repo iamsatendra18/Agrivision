@@ -1,4 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:agrivision/screens/trader/trader_add_product_screen.dart';
+import 'package:agrivision/screens/trader/trader_anudan_screen.dart';
 import 'package:agrivision/screens/trader/trader_climate_guidencess_screen.dart';
 import 'package:agrivision/screens/trader/trader_contact_us_screen.dart';
 import 'package:agrivision/screens/trader/trader_edit_product_screen.dart';
@@ -8,12 +13,8 @@ import 'package:agrivision/screens/trader/trader_payment_screen.dart';
 import 'package:agrivision/screens/trader/trader_privacy_policy_screen.dart';
 import 'package:agrivision/screens/trader/trader_product_list_screen.dart';
 import 'package:agrivision/screens/trader/trader_profile_page.dart';
-import 'package:agrivision/screens/trader/trader_anudan_screen.dart';
 import 'package:agrivision/screens/trader/trader_terms_and_conditions_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import '../../utiles/routes/routes_name.dart';
+import 'package:agrivision/utiles/routes/routes_name.dart';
 
 class TraderHomeScreen extends StatefulWidget {
   @override
@@ -53,83 +54,92 @@ class _TraderHomeScreenState extends State<TraderHomeScreen> {
 
                 return DrawerHeader(
                   decoration: BoxDecoration(color: Colors.green),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final screenWidth = constraints.maxWidth;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => TraderProfilePage()),
-                              );
-                            },
-                            child: CircleAvatar(
-                              radius: 40,
-                              backgroundImage: imageUrl.isNotEmpty
-                                  ? imageUrl.startsWith('assets/')
-                                  ? AssetImage(imageUrl) as ImageProvider
-                                  : NetworkImage(imageUrl)
-                                  : AssetImage('assets/profile_picture.jpg'),
+                          Row(
+                            children: [
+                              InkWell(
+                                onTap: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => TraderProfilePage()));
+                                },
+                                child: CircleAvatar(
+                                  radius: screenWidth < 400 ? 30 : 40,
+                                  backgroundImage: imageUrl.isNotEmpty
+                                      ? (imageUrl.startsWith('assets/')
+                                      ? AssetImage(imageUrl) as ImageProvider
+                                      : NetworkImage(imageUrl))
+                                      : const AssetImage('assets/profile_picture.jpg'),
+                                ),
+                              ),
+                              const Spacer(),
+                              StreamBuilder<QuerySnapshot>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('notifications')
+                                    .where('to', isEqualTo: 'trader')
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  final count = snapshot.data?.docs.length ?? 0;
+                                  return Stack(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.notifications, color: Colors.white),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(builder: (_) => TraderNotificationScreen()),
+                                          );
+                                        },
+                                      ),
+                                      if (count > 0)
+                                        Positioned(
+                                          right: 6,
+                                          top: 6,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(5),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                                            child: Text(
+                                              '$count',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            traderName,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: screenWidth < 400 ? 18 : 24,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('notifications')
-                                .where('to', isEqualTo: 'trader')
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              final count = snapshot.data?.docs.length ?? 0;
-                              return Stack(
-                                alignment: Alignment.topRight,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.notifications, color: Colors.white),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => TraderNotificationScreen()),
-                                      );
-                                    },
-                                  ),
-                                  if (count > 0)
-                                    Positioned(
-                                      right: 6,
-                                      top: 6,
-                                      child: Container(
-                                        padding: EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          '$count',
-                                          style: TextStyle(color: Colors.white, fontSize: 10),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              );
-                            },
-                          )
                         ],
-                      ),
-                      SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          traderName,
-                          style: TextStyle(color: Colors.white, fontSize: 24),
-                        ),
-                      )
-                    ],
+                      );
+                    },
                   ),
                 );
               },
             ),
 
+            // Drawer List Items
             ListTile(
               leading: Icon(Icons.volunteer_activism),
               title: Text('Anudan'),
@@ -171,12 +181,12 @@ class _TraderHomeScreenState extends State<TraderHomeScreen> {
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderContactUsScreen())),
             ),
             ListTile(
-              leading: Icon(Icons.contact_mail),
+              leading: Icon(Icons.privacy_tip),
               title: Text('Privacy Policy'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderPrivacyPolicyScreen())),
             ),
             ListTile(
-              leading: Icon(Icons.home),
+              leading: Icon(Icons.article),
               title: Text('Terms and Conditions'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TraderTermsAndConditionsScreen())),
             ),

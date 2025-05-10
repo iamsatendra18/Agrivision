@@ -78,7 +78,7 @@ class _TraderContactUsScreenState extends State<TraderContactUsScreen> {
           'userId': user.uid,
           'message': _messageController.text.trim(),
           'timestamp': FieldValue.serverTimestamp(),
-          'role': 'Trader', // ✅ Important
+          'role': 'Trader', //  Important
         });
 
         _showSnackbar("Message Sent Successfully!");

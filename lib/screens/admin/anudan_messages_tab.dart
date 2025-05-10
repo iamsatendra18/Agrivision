@@ -15,11 +15,11 @@ class _AnudanMessagesTabState extends State<AnudanMessagesTab> {
     try {
       await anudanRef.doc(docId).delete();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ Message deleted successfully')),
+        SnackBar(content: Text('Message deleted successfully')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ Error deleting message: $e')),
+        SnackBar(content: Text('Error deleting message: $e')),
       );
     }
   }
@@ -61,7 +61,7 @@ class _AnudanMessagesTabState extends State<AnudanMessagesTab> {
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('✅ Message updated successfully')),
+                SnackBar(content: Text('Message updated successfully')),
               );
             },
             child: Text('Update'),
@@ -109,7 +109,7 @@ class _AnudanMessagesTabState extends State<AnudanMessagesTab> {
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('✅ Anudan message added')),
+                SnackBar(content: Text('Anudan message added')),
               );
             },
             child: Text('Add'),
@@ -121,6 +121,9 @@ class _AnudanMessagesTabState extends State<AnudanMessagesTab> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Anudan Messages'),
@@ -135,8 +138,10 @@ class _AnudanMessagesTabState extends State<AnudanMessagesTab> {
       body: StreamBuilder<QuerySnapshot>(
         stream: anudanRef.orderBy('timestamp', descending: true).snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasError) return Center(child: Text('❌ Error loading messages'));
-          if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+          if (snapshot.hasError)
+            return Center(child: Text('Error loading messages'));
+          if (snapshot.connectionState == ConnectionState.waiting)
+            return Center(child: CircularProgressIndicator());
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(child: Text('No anudan messages found.'));
@@ -153,51 +158,103 @@ class _AnudanMessagesTabState extends State<AnudanMessagesTab> {
               final title = data['title'] ?? 'No Title';
               final message = data['message'] ?? 'No Message';
               final timestamp = data['timestamp'] != null
-                  ? DateFormat('dd MMM yyyy, hh:mm a').format(
-                  (data['timestamp'] as Timestamp).toDate())
+                  ? DateFormat('dd MMM yyyy, hh:mm a')
+                  .format((data['timestamp'] as Timestamp).toDate())
                   : 'No Date';
 
-              return Card(
-                elevation: 4,
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: isWideScreen
+                        ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
                           backgroundColor: Color(0xFF2E7D32),
-                          child: Icon(Icons.volunteer_activism, color: Colors.white),
+                          child: Icon(Icons.volunteer_activism,
+                              color: Colors.white),
                         ),
-                        title: Text(title,
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green[800])),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 6),
-                            Text(message),
-                            SizedBox(height: 6),
-                            Text(timestamp, style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          ],
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(title,
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green[800])),
+                              SizedBox(height: 6),
+                              Text(message),
+                              SizedBox(height: 6),
+                              Text(timestamp,
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        Column(
                           children: [
                             IconButton(
                               icon: Icon(Icons.edit, color: Colors.orange),
-                              onPressed: () => _editMessage(doc.id, title, message),
+                              onPressed: () =>
+                                  _editMessage(doc.id, title, message),
                             ),
                             IconButton(
                               icon: Icon(Icons.delete, color: Colors.red),
                               onPressed: () => _deleteMessage(doc.id),
                             ),
                           ],
+                        )
+                      ],
+                    )
+                        : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: Color(0xFF2E7D32),
+                            child: Icon(Icons.volunteer_activism,
+                                color: Colors.white),
+                          ),
+                          title: Text(title,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green[800])),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 6),
+                              Text(message),
+                              SizedBox(height: 6),
+                              Text(timestamp,
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit, color: Colors.orange),
+                                onPressed: () =>
+                                    _editMessage(doc.id, title, message),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteMessage(doc.id),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );

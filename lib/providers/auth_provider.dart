@@ -12,7 +12,7 @@ class AuthProvider with ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
-  // ✅ SIGNUP
+  // SIGNUP
   Future<void> signup(
       String fullName,
       String address,
@@ -39,12 +39,12 @@ class AuthProvider with ChangeNotifier {
           'address': address,
           'phone': phone,
           'email': email,
-          'role': role.toLowerCase(), // 🔥 Store lowercase
+          'role': role.toLowerCase(), // Store lowercase
           'createdAt': FieldValue.serverTimestamp(),
         };
 
         if (role.toLowerCase() == 'trader') {
-          userData['verified'] = false; // 👈 initially false
+          userData['verified'] = false; //  initially false
         }
 
         await _firestore.collection('users').doc(user.uid).set(userData);
@@ -76,7 +76,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ LOGIN
+  //  LOGIN
   Future<void> login(
       String email,
       String password,
@@ -97,7 +97,7 @@ class AuthProvider with ChangeNotifier {
         await _firestore.collection('users').doc(user.uid).get();
 
         if (userDoc.exists) {
-          String role = (userDoc.get('role') ?? '').toString().toLowerCase(); // 🔥 force lowercase
+          String role = (userDoc.get('role') ?? '').toString().toLowerCase(); //  force lowercase
 
           if (redirectData != null && redirectData['redirectTo'] != null) {
             Navigator.pushReplacementNamed(
@@ -124,7 +124,7 @@ class AuthProvider with ChangeNotifier {
                     ),
                   ),
                 );
-                await _auth.signOut(); // ❌ Logout if not verified
+                await _auth.signOut(); //  Logout if not verified
               }
             } else if (role == 'user') {
               Navigator.pushReplacement(

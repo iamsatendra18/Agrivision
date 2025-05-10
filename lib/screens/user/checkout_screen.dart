@@ -52,12 +52,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         isLoading = false;
       });
     } catch (e) {
-      print("❌ Error loading cart: $e");
+      print("Error loading cart: $e");
     }
   }
 
   Future<void> _openPaymentScreen() async {
-
     try {
       EsewaFlutterSdk.initPayment(
         esewaConfig: EsewaConfig(
@@ -66,10 +65,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             environment: Environment.test),
         onPaymentSuccess: (EsewaPaymentSuccessResult data) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Payment Successful!}")),
+            SnackBar(content: Text("Payment Successful!")),
           );
         },
-        onPaymentFailure: ( data) {
+        onPaymentFailure: (data) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Payment Failed: ${data.message}")),
           );
@@ -85,70 +84,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             productPrice: totalAmount.toString(),
             callbackUrl: 'https://yourdomain.com/callback'),
       );
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
-      );
-    }
-  }
-
-  Future<void> _confirmAndPay() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    try {
-      final cartItems = await FirebaseFirestore.instance
-          .collection('cart')
-          .doc(user.uid)
-          .collection('items')
-          .get();
-
-      List<Map<String, dynamic>> items = [];
-
-      for (var doc in cartItems.docs) {
-        final data = doc.data();
-        items.add({
-          'name': data['name'],
-          'price': data['price'],
-          'quantity': data['quantity'],
-          'imageUrl': data['imageUrl'],
-          'productId': data['productId'],
-          'category': data['category'] ?? '',
-          'createdBy': data['createdBy'] ?? '',
-        });
-      }
-
-      // ✅ Place order to Firestore
-      await FirebaseFirestore.instance.collection('orders').add({
-        'userId': user.uid,
-        'items': items,
-        'totalAmount': totalAmount,
-        'paymentMethod': 'eSewa',
-        'deliveryAddress': 'Village Road, Agri Farm, Nepal',
-        'note': '', // future use
-        'latitude': 27.7000, // static for now
-        'longitude': 85.3000, // static for now
-        'status': 'Pending',
-        'timestamp': FieldValue.serverTimestamp(), // 🔥 this was missing
-      });
-
-      for (var doc in cartItems.docs) {
-        await doc.reference.delete();
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Order placed successfully!")),
-      );
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        RoutesName.navigationMenu,
-            (route) => false,
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error placing order: $e")),
       );
     }
   }
@@ -200,13 +138,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Failed to cancel order: $e")),
+        SnackBar(content: Text("Failed to cancel order: $e")),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Customer Checkout'),
@@ -225,11 +165,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 20),
                 const CircleAvatar(
                   radius: 50,
                   backgroundImage: AssetImage('assets/agrivision_logo.png'),
@@ -239,7 +178,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Text(
                   'AgriVision Checkout',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: screenWidth * 0.055,
                     fontWeight: FontWeight.bold,
                     color: Colors.brown[700],
                   ),
@@ -247,7 +186,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(height: 10),
                 Text(
                   'Secure your order and support sustainable farming!',
-                  style: TextStyle(fontSize: 16, color: Colors.brown[600]),
+                  style: TextStyle(fontSize: screenWidth * 0.042, color: Colors.brown[600]),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
@@ -257,28 +196,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(screenWidth * 0.045),
                     child: Column(
                       children: [
                         ListTile(
-                          leading: Icon(Icons.shopping_cart, color: Colors.green[700]),
-                          title: const Text('Items in Cart'),
+                          leading: Icon(Icons.shopping_cart, color: Colors.green[700], size: screenWidth * 0.07),
+                          title: Text('Items in Cart', style: TextStyle(fontSize: screenWidth * 0.045)),
                           subtitle: Text('$totalItems Items - ₹${totalAmount.toStringAsFixed(2)}'),
                         ),
                         const Divider(),
                         ListTile(
-                          leading: Icon(Icons.delivery_dining, color: Colors.green[700]),
-                          title: const Text('Delivery Address'),
+                          leading: Icon(Icons.delivery_dining, color: Colors.green[700], size: screenWidth * 0.07),
+                          title: Text('Delivery Address', style: TextStyle(fontSize: screenWidth * 0.045)),
                           subtitle: const Text('Village Road, Agri Farm, Nepal'),
                         ),
                         const Divider(),
                         InkWell(
                           onTap: _openPaymentScreen,
                           child: ListTile(
-                            leading: Icon(Icons.payment, color: Colors.green[700]),
-                            title: const Text('Payment Method'),
-                            subtitle: const Text('Tap to choose FonePay / PayPal / eSewa'),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                            leading: Icon(Icons.payment, color: Colors.green[700], size: screenWidth * 0.07),
+                            title: Text('Payment Method', style: TextStyle(fontSize: screenWidth * 0.045)),
+                            subtitle: const Text('Tap to choose Cash on Delivery / FonePay / eSewa'),
+                            trailing: Icon(Icons.arrow_forward_ios, size: screenWidth * 0.04, color: Colors.grey),
                           ),
                         ),
                       ],
@@ -286,25 +225,31 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: _openPaymentScreen,
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
-                  label: const Text('Confirm & Pay'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[700],
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    textStyle: const TextStyle(fontSize: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _openPaymentScreen,
+                    icon: const Icon(Icons.check_circle, color: Colors.white),
+                    label: const Text('Confirm & Pay'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[700],
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.1,
+                        vertical: screenWidth * 0.035,
+                      ),
+                      textStyle: TextStyle(fontSize: screenWidth * 0.045),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextButton(
                   onPressed: _cancelOrder,
-                  child: const Text(
+                  child: Text(
                     'Cancel Order',
-                    style: TextStyle(color: Colors.red, fontSize: 16),
+                    style: TextStyle(color: Colors.red, fontSize: screenWidth * 0.043),
                   ),
                 ),
               ],

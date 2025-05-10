@@ -75,7 +75,7 @@ class TraderAnudanScreen extends StatelessWidget {
             stream: anudanRef.orderBy('timestamp', descending: true).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                return Center(child: Text('❌ Error loading messages'));
+                return Center(child: Text(' Error loading messages'));
               }
 
               if (snapshot.connectionState == ConnectionState.waiting) {

@@ -9,9 +9,10 @@ class TraderOrderScreen extends StatefulWidget {
   State<TraderOrderScreen> createState() => _TraderOrderScreenState();
 }
 
-class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTickerProviderStateMixin {
+class _TraderOrderScreenState extends State<TraderOrderScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> _statuses = ["All", "Pending", "Shipped", "Delivered", "Cancelled"];
+  final List<String> _statuses = ["All", "Pending", "Delivered", "Cancelled"];
   String? traderId;
 
   @override
@@ -19,6 +20,22 @@ class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTicker
     super.initState();
     _tabController = TabController(length: _statuses.length, vsync: this);
     traderId = FirebaseAuth.instance.currentUser?.uid;
+  }
+
+  void _updateOrderStatus(String orderId, String newStatus) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(orderId)
+          .update({'status': newStatus});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(" Order marked as $newStatus")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(" Failed to update status: $e")),
+      );
+    }
   }
 
   @override
@@ -37,41 +54,39 @@ class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTicker
         ),
       ),
       body: traderId == null
-          ? const Center(child: Text("\u26a0\ufe0f Trader not logged in"))
+          ? const Center(child: Text(" Trader not logged in"))
           : TabBarView(
         controller: _tabController,
-        children: _statuses.map((status) => _buildOrderList(status)).toList(),
+        children:
+        _statuses.map((status) => _buildOrderList(status)).toList(),
       ),
     );
   }
 
   Widget _buildOrderList(String statusFilter) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('orders').orderBy('timestamp', descending: true).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('orders')
+          .orderBy('orderedAt', descending: true)
+          .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return const Center(child: Text("\u274c Error loading orders"));
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text("\ud83d\udccd No orders available."));
         }
 
         final traderOrders = snapshot.data!.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
           final items = data['items'] as List<dynamic>? ?? [];
           final status = (data['status'] ?? "").toString().toLowerCase();
-          final matchesStatus = statusFilter == "All" || status == statusFilter.toLowerCase();
-          final containsTraderItem = items.any((item) => item['traderId'] == traderId);
+          final matchesStatus =
+              statusFilter == "All" || status == statusFilter.toLowerCase();
+          final containsTraderItem =
+          items.any((item) => item['traderId'] == traderId);
           return containsTraderItem && matchesStatus;
         }).toList();
 
         if (traderOrders.isEmpty) {
-          return const Center(child: Text("\ud83d\udccd No orders found for your products."));
+          return const Center(child: Text(" No orders found for your products."));
         }
 
         return ListView.builder(
@@ -80,6 +95,7 @@ class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTicker
             final doc = traderOrders[index];
             final data = doc.data() as Map<String, dynamic>;
             final userId = data['userId'];
+            final status = data['status'] ?? 'Pending';
             final filteredItems = (data['items'] as List<dynamic>)
                 .where((item) => item['traderId'] == traderId)
                 .toList();
@@ -87,43 +103,106 @@ class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTicker
             return FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
               builder: (context, userSnap) {
+                if (!userSnap.hasData) return const SizedBox();
+
                 final userData = userSnap.data?.data() as Map<String, dynamic>? ?? {};
                 final buyerName = userData['fullName'] ?? 'Unknown';
+                final buyerImage = userData['imageUrl'] ?? '';
+                final buyerPhone = userData['phone'] ?? '';
+                final buyerAddress = userData['address'] ?? '';
 
                 return Column(
                   children: filteredItems.map((item) {
-                    return Card(
-                      margin: const EdgeInsets.all(10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: ListTile(
-                        leading: item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty
-                            ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            item['imageUrl'],
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
-                          ),
-                        )
-                            : const Icon(Icons.image_not_supported),
-                        title: Text(item['name'] ?? 'Unnamed Product'),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Qty: ${item['quantity']} | Price: \u20b9${item['price']}"),
-                            Text("Buyer: $buyerName"),
-                            Text(
-                              "Status: ${data['status']}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: _getStatusColor(data['status']),
-                              ),
+                    final productName = item['name'] ?? 'Unnamed';
+                    final qty = item['quantity'];
+                    final price = item['price'];
+
+                    return FutureBuilder<QuerySnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('products')
+                          .where('name', isEqualTo: productName)
+                          .get(),
+                      builder: (context, prodSnap) {
+                        final prodDoc = prodSnap.data?.docs.firstOrNull;
+                        final prodImage = prodDoc?.get('imageUrl') ?? '';
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: ClipOval(
+                                    child: buyerImage.startsWith("http")
+                                        ? Image.network(buyerImage, width: 45, height: 45, fit: BoxFit.cover)
+                                        : Image.asset(
+                                      buyerImage.isNotEmpty
+                                          ? buyerImage
+                                          : "assets/agrivision_logo.png",
+                                      width: 45,
+                                      height: 45,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  title: Text(productName),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text("Qty: $qty | Price: ₹$price"),
+                                      Text("Buyer: $buyerName"),
+                                      Text("Phone: $buyerPhone"),
+                                      Text("Address: $buyerAddress"),
+                                      Text(
+                                        "Status: $status",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: _getStatusColor(status),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                prodImage.isNotEmpty
+                                    ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: prodImage.startsWith("http")
+                                      ? Image.network(prodImage, height: 140, fit: BoxFit.cover)
+                                      : Image.asset(prodImage, height: 140, fit: BoxFit.cover),
+                                )
+                                    : const Icon(Icons.image_not_supported),
+                                const SizedBox(height: 10),
+                                if (status == 'Pending')
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () => _updateOrderStatus(doc.id, 'Delivered'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green[700],
+                                        ),
+                                        child: const Text("Confirm"),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      OutlinedButton(
+                                        onPressed: () => _updateOrderStatus(doc.id, 'Cancelled'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                          side: const BorderSide(color: Colors.red),
+                                        ),
+                                        child: const Text("Cancel"),
+                                      ),
+                                    ],
+                                  ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   }).toList(),
                 );
@@ -139,8 +218,6 @@ class _TraderOrderScreenState extends State<TraderOrderScreen> with SingleTicker
     switch (status.toLowerCase()) {
       case 'pending':
         return Colors.orange;
-      case 'shipped':
-        return Colors.blue;
       case 'delivered':
         return Colors.green;
       case 'cancelled':

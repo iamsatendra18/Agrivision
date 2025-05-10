@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 class TermsAndConditionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Terms and Conditions"),
-        backgroundColor: Color(0xFF2E7D32),
+        title: Text("Terms and Conditions", style: TextStyle(fontSize: screenWidth * 0.05)),
+        backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 20),
         child: SingleChildScrollView(
           child: Text(
             '''
@@ -43,7 +45,11 @@ By downloading or using the AgriVision app, you agree to the following terms:
 
 Thank you for using AgriVision!
             ''',
-            style: TextStyle(fontSize: 16, height: 1.5),
+            style: TextStyle(
+              fontSize: screenWidth * 0.042,
+              height: 1.6,
+              color: Colors.black87,
+            ),
           ),
         ),
       ),

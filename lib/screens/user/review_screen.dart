@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 class ReviewScreen extends StatefulWidget {
   final String productId;
 
-  const ReviewScreen({required this.productId});
+  const ReviewScreen({super.key, required this.productId});
 
   @override
   _ReviewScreenState createState() => _ReviewScreenState();
@@ -19,9 +19,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Future<void> _submitReview() async {
     if (!_formKey.currentState!.validate() || _rating == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Please add review & rating"),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please add review & rating")),
+      );
       return;
     }
 
@@ -38,20 +38,25 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
     try {
       await FirebaseFirestore.instance.collection('reviews').add(reviewData);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("✅ Review submitted!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(" Review submitted!")),
+      );
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(" Error: $e")),
+      );
     } finally {
       setState(() => _isSubmitting = false);
     }
   }
 
-  Widget _buildStarRating() {
+  Widget _buildStarRating(double iconSize) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (index) {
         return IconButton(
+          iconSize: iconSize,
           icon: Icon(
             index < _rating ? Icons.star : Icons.star_border,
             color: Colors.orange,
@@ -64,38 +69,51 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      appBar: AppBar(title: Text("Write a Review"), backgroundColor: Colors.green[700]),
+      appBar: AppBar(
+        title: Text("Write a Review", style: TextStyle(fontSize: screenWidth * 0.05)),
+        backgroundColor: Colors.green[700],
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 20),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              Text("Rate the product", style: TextStyle(fontSize: 18)),
-              SizedBox(height: 8),
-              _buildStarRating(),
-              SizedBox(height: 20),
+              Text("Rate the product", style: TextStyle(fontSize: screenWidth * 0.045)),
+              const SizedBox(height: 8),
+              _buildStarRating(screenWidth * 0.08),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _reviewController,
                 maxLines: 4,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: "Write your review...",
                   border: OutlineInputBorder(),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? "Review is required" : null,
+                validator: (val) =>
+                val == null || val.trim().isEmpty ? "Review is required" : null,
               ),
-              SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _isSubmitting ? null : _submitReview,
-                icon: Icon(Icons.send),
-                label: Text("Submit Review"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isSubmitting ? null : _submitReview,
+                  icon: const Icon(Icons.send),
+                  label: const Text("Submit Review"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[700],
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.06,
+                      vertical: screenWidth * 0.035,
+                    ),
+                    textStyle: TextStyle(fontSize: screenWidth * 0.045),
+                  ),
                 ),
-              )
+              ),
             ],
           ),
         ),

@@ -1,88 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart'; // For date formatting
 
-class TraderPaymentScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> payments = [
-    {
-      "product": "🌾 Wheat",
-      "amount": "₹5,000",
-      "transactionId": "TXN123456",
-      "date": "2025-03-15",
-      "paymentMethod": "Cash",
-      "status": "Completed",
-      "icon": LucideIcons.wheat,
-    },
-    {
-      "product": "🍏 Apples",
-      "amount": "₹3,200",
-      "transactionId": "TXN654321",
-      "date": "2025-03-14",
-      "paymentMethod": "Bank Transfer",
-      "status": "Pending",
-      "icon": LucideIcons.apple,
-    },
-    {
-      "product": "🥛 Dairy Milk",
-      "amount": "₹6,800",
-      "transactionId": "TXN789654",
-      "date": "2025-03-10",
-      "paymentMethod": "Cash",
-      "status": "Completed",
-      "icon": LucideIcons.milk,
-    },
-    {
-      "product": "🥦 Spinach",
-      "amount": "₹1,500",
-      "transactionId": "TXN112233",
-      "date": "2025-03-09",
-      "paymentMethod": "FonePay",
-      "status": "Failed",
-      "icon": LucideIcons.leaf,
-    },
-    {
-      "product": "🥕 Carrots",
-      "amount": "₹2,400",
-      "transactionId": "TXN556677",
-      "date": "2025-02-25",
-      "paymentMethod": "Credit Card",
-      "status": "Completed",
-      "icon": LucideIcons.carrot,
-    },
-  ];
+class TraderPaymentScreen extends StatefulWidget {
+  @override
+  _TraderPaymentScreenState createState() => _TraderPaymentScreenState();
+}
+
+class _TraderPaymentScreenState extends State<TraderPaymentScreen> {
+  final String traderId = FirebaseAuth.instance.currentUser?.uid ?? '';  // Get traderId
+  List<Map<String, dynamic>> payments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPayments();  // Fetch payments when the screen initializes
+  }
+
+  // Fetch payments for the trader
+  void _fetchPayments() async {
+    if (traderId.isEmpty) {
+      print("Trader ID is empty, make sure the user is logged in.");
+      return;
+    }
+
+    try {
+      final ordersSnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('items.traderId', isEqualTo: traderId) // Filter by traderId
+          .get();
+
+      // Debugging: Check if the query returned any data
+      print("Fetched orders: ${ordersSnapshot.docs.length}");
+
+      if (ordersSnapshot.docs.isEmpty) {
+        print("No orders found for this trader.");
+      }
+
+      // Process the fetched orders and store them in the payments list
+      setState(() {
+        payments = ordersSnapshot.docs.map((doc) {
+          final data = doc.data();
+          double totalAmount = 0.0;
+          String paymentMethod = '';
+          String status = '';
+
+          // Calculate total for the trader's items in the order
+          List items = data['items'];
+          for (var item in items) {
+            if (item['traderId'] == traderId) {
+              totalAmount += item['total']; // Add up the total for the trader's items
+            }
+          }
+
+          // Extract payment method and status from the order
+          paymentMethod = data['paymentMethod'] ?? 'Unknown';
+          status = data['status'] ?? 'Unknown';
+
+          return {
+            'product': 'Order ${doc.id}', // Display order ID or product name
+            'amount': '₹$totalAmount', // Amount for the trader's items
+            'transactionId': doc.id, // Use the order document ID as the transaction ID
+            'date': DateFormat('yyyy-MM-dd').format((data['orderedAt'] as Timestamp).toDate()), // Date of the order
+            'paymentMethod': paymentMethod,
+            'status': status,
+            'icon': LucideIcons.shoppingBag, // Icon for the payment
+          };
+        }).toList();
+      });
+    } catch (e) {
+      print("Error fetching orders: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> filteredPayments = _filterLast30DaysPayments();
-
     return Scaffold(
       backgroundColor: Colors.green[50],
       appBar: AppBar(
         title: Text(
-          'Payment History (Last 30 Days)',
+          'Payments for Trader',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.green[700],
-        leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft), // Back button
-          onPressed: () {
-            Navigator.pop(context); // Navigate back
-          },
-        ),
       ),
-      body: filteredPayments.isEmpty
+      body: payments.isEmpty
           ? _buildEmptyState()
           : ListView.builder(
         padding: EdgeInsets.all(16),
-        itemCount: filteredPayments.length,
+        itemCount: payments.length,
         itemBuilder: (context, index) {
-          return _buildPaymentCard(filteredPayments[index]);
+          return _buildPaymentCard(payments[index]);
         },
       ),
     );
   }
 
-  /// UI when there are no payments
+  // UI when there are no payments
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -105,8 +121,10 @@ class TraderPaymentScreen extends StatelessWidget {
     );
   }
 
-  /// Payment Card Widget
+  // Payment Card Widget
   Widget _buildPaymentCard(Map<String, dynamic> payment) {
+    print("Displaying Payment: ${payment['product']}, Amount: ${payment['amount']}");
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -142,7 +160,7 @@ class TraderPaymentScreen extends StatelessWidget {
               style: TextStyle(fontSize: 14, color: Colors.black),
             ),
             Text(
-              "Date: ${_formatDate(payment["date"])}",
+              "Date: ${payment["date"]}",
               style: TextStyle(fontSize: 14, color: Colors.black),
             ),
             Text(
@@ -163,7 +181,7 @@ class TraderPaymentScreen extends StatelessWidget {
     );
   }
 
-  /// Function to determine payment status color
+  // Function to determine payment status color
   Color _getStatusColor(String status) {
     switch (status) {
       case "Pending":
@@ -174,33 +192,6 @@ class TraderPaymentScreen extends StatelessWidget {
         return Colors.red;
       default:
         return Colors.black;
-    }
-  }
-
-  /// Function to filter payments from the last 30 days
-  List<Map<String, dynamic>> _filterLast30DaysPayments() {
-    DateTime today = DateTime.now();
-    DateTime last30Days = today.subtract(Duration(days: 30));
-
-    return payments.where((payment) {
-      try {
-        DateTime paymentDate = DateTime.parse(payment["date"]);
-        return paymentDate.isAfter(last30Days) && paymentDate.isBefore(today);
-      } catch (e) {
-        print("Error parsing date: ${payment["date"]} - $e");
-        return false;
-      }
-    }).toList();
-  }
-
-  /// Function to format date as "March 15, 2025"
-  String _formatDate(String date) {
-    try {
-      DateTime parsedDate = DateTime.parse(date);
-      return DateFormat("MMMM d, yyyy").format(parsedDate);
-    } catch (e) {
-      print("Error formatting date: $date - $e");
-      return date; // Return original string if formatting fails
     }
   }
 }

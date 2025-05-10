@@ -29,9 +29,9 @@ class EmailOTPService {
         'template_id': 'template_h2a01h2',
         'user_id': '88LJ_EH_Ak_VFRsR1',
         'template_params': {
-          'email': toEmail,       // ✅ Matches {{email}}
-          'passcode': otpCode,    // ✅ Matches {{passcode}}
-          'time': formattedTime,  // ✅ Matches {{time}}
+          'email': toEmail,       //  Matches {{email}}
+          'passcode': otpCode,    //  Matches {{passcode}}
+          'time': formattedTime,  //  Matches {{time}}
         },
       }),
     );

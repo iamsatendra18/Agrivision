@@ -180,7 +180,7 @@ class _TraderCropRecommendationScreenState
 
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text("✅ Recommendation deleted."),
+                content: Text("Recommendation deleted."),
                 backgroundColor: Colors.red,
               ));
               setState(() {

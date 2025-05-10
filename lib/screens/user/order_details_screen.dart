@@ -8,6 +8,8 @@ class OrderDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     final items = orderData['items'] as List<dynamic>? ?? [];
     final subtotal = (orderData['totalAmount'] ?? 0.0) - 30;
     final deliveryCharge = 30.0;
@@ -19,48 +21,66 @@ class OrderDetailsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Order Details"),
+        title: Text("Order Details", style: TextStyle(fontSize: screenWidth * 0.05)),
         backgroundColor: Colors.green[700],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: screenWidth * 0.03),
         child: ListView(
           children: [
-            const Text("🛒 Products Ordered", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            Text("🛒 Products Ordered", style: TextStyle(fontWeight: FontWeight.bold, fontSize: screenWidth * 0.045)),
+            SizedBox(height: screenWidth * 0.02),
             ...items.map((item) {
               final name = item['name'] ?? 'Product';
               final qty = item['quantity'] ?? 1;
               final price = item['price'] ?? 0.0;
               final total = qty * price;
+              final imageUrl = item['imageUrl'] ?? '';
+
               return ListTile(
-                title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                subtitle: Text("Qty: $qty x ₹$price"),
-                trailing: Text("₹${total.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.w600)),
+                leading: imageUrl.toString().isNotEmpty
+                    ? (imageUrl.toString().startsWith("http")
+                    ? Image.network(
+                  imageUrl,
+                  width: screenWidth * 0.12,
+                  height: screenWidth * 0.12,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                )
+                    : Image.asset(
+                  imageUrl,
+                  width: screenWidth * 0.12,
+                  height: screenWidth * 0.12,
+                  fit: BoxFit.cover,
+                ))
+                    : Icon(Icons.image_not_supported, size: screenWidth * 0.1),
+                title: Text(name, style: TextStyle(fontWeight: FontWeight.w500, fontSize: screenWidth * 0.045)),
+                subtitle: Text("Qty: $qty x ₹$price", style: TextStyle(fontSize: screenWidth * 0.035)),
+                trailing: Text("₹${total.toStringAsFixed(2)}", style: TextStyle(fontWeight: FontWeight.w600, fontSize: screenWidth * 0.04)),
               );
             }).toList(),
 
             const Divider(),
-            _buildPriceRow("Subtotal", subtotal),
-            _buildPriceRow("Delivery Charge", deliveryCharge),
-            _buildPriceRow("Total", totalAmount, bold: true),
+            _buildPriceRow("Subtotal", subtotal, screenWidth),
+            _buildPriceRow("Delivery Charge", deliveryCharge, screenWidth),
+            _buildPriceRow("Total", totalAmount, screenWidth, bold: true),
 
-            const SizedBox(height: 20),
-            const Text("📝 Order Note", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 6),
-            Text(note, style: const TextStyle(color: Colors.black87)),
+            SizedBox(height: screenWidth * 0.05),
+            Text("📝 Order Note", style: TextStyle(fontWeight: FontWeight.bold, fontSize: screenWidth * 0.045)),
+            SizedBox(height: screenWidth * 0.015),
+            Text(note, style: TextStyle(color: Colors.black87, fontSize: screenWidth * 0.04)),
 
-            const SizedBox(height: 20),
-            const Text("📍 Shipping Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 10),
+            SizedBox(height: screenWidth * 0.05),
+            Text("📍 Shipping Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: screenWidth * 0.045)),
+            SizedBox(height: screenWidth * 0.02),
             SizedBox(
-              height: 200,
+              height: screenWidth * 0.5,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: GoogleMap(
                   initialCameraPosition: CameraPosition(target: latLng, zoom: 15),
                   markers: {
-                    Marker(markerId: const MarkerId('deliveryLocation'), position: latLng),
+                    Marker(markerId: MarkerId('deliveryLocation'), position: latLng),
                   },
                   zoomControlsEnabled: false,
                   liteModeEnabled: true,
@@ -68,16 +88,14 @@ class OrderDetailsScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 30),
-            Align(
-              alignment: Alignment.center,
+            SizedBox(height: screenWidth * 0.08),
+            Center(
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: screenWidth * 0.035),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   side: BorderSide(color: Colors.green.shade700),
                   backgroundColor: Colors.white,
-                  elevation: 0,
                 ),
                 onPressed: () {
                   showDialog(
@@ -85,59 +103,70 @@ class OrderDetailsScreen extends StatelessWidget {
                     barrierDismissible: true,
                     builder: (_) => AlertDialog(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                      contentPadding: EdgeInsets.symmetric(
+                          vertical: screenWidth * 0.06, horizontal: screenWidth * 0.05),
                       content: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.info, color: Colors.green, size: 36),
-                          const SizedBox(height: 10),
-                          const Text("Need Help!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                          const SizedBox(height: 8),
-                          const Text(
+                          Icon(Icons.info, color: Colors.green, size: screenWidth * 0.09),
+                          SizedBox(height: screenWidth * 0.02),
+                          Text("Need Help!",
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: screenWidth * 0.05)),
+                          SizedBox(height: screenWidth * 0.02),
+                          Text(
                             "For any assistance please contact our support at:",
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 14),
+                            style: TextStyle(fontSize: screenWidth * 0.038),
                           ),
-                          const SizedBox(height: 6),
-                          const Text(
+                          SizedBox(height: screenWidth * 0.015),
+                          Text(
                             "📧 satendrakushwaha2021@gmail.com",
-                            style: TextStyle(fontSize: 14),
+                            style: TextStyle(fontSize: screenWidth * 0.038),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: screenWidth * 0.04),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(context),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: screenWidth * 0.06,
+                                vertical: screenWidth * 0.025,
+                              ),
                             ),
-                            child: const Text("Close", style: TextStyle(color: Colors.white)),
+                            child: Text("Close", style: TextStyle(color: Colors.white, fontSize: screenWidth * 0.04)),
                           ),
                         ],
                       ),
                     ),
                   );
                 },
-                icon: const Icon(Icons.support_agent, color: Colors.green),
-                label: const Text("Need Help", style: TextStyle(color: Colors.green)),
+                icon: Icon(Icons.support_agent, color: Colors.green, size: screenWidth * 0.05),
+                label: Text("Need Help", style: TextStyle(color: Colors.green, fontSize: screenWidth * 0.045)),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: screenWidth * 0.05),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPriceRow(String label, double value, {bool bold = false}) {
+  Widget _buildPriceRow(String label, double value, double screenWidth, {bool bold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: screenWidth * 0.01),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
-          Text("₹${value.toStringAsFixed(2)}", style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
+          Text(label,
+              style: TextStyle(
+                  fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+                  fontSize: screenWidth * 0.04)),
+          Text("₹${value.toStringAsFixed(2)}",
+              style: TextStyle(
+                  fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+                  fontSize: screenWidth * 0.04)),
         ],
       ),
     );
